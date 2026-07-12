@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-  BuildIcon,
   ExercisesIcon,
   HistoryIcon,
   WeekIcon,
@@ -9,19 +8,18 @@ import {
 } from '../icons';
 import { useWorkouts } from '../../hooks/useWorkouts';
 
+// Build is reached from the "New workout" button on Workouts, so it's not a nav item.
 const DESKTOP_NAV = [
   { to: '/week', label: 'This Week', Icon: WeekIcon },
   { to: '/workouts', label: 'Workouts', Icon: WorkoutsIcon },
-  { to: '/build', label: 'Build', Icon: BuildIcon },
   { to: '/exercises', label: 'Exercises', Icon: ExercisesIcon },
   { to: '/history', label: 'History', Icon: HistoryIcon },
 ];
 
-// Phone reaches Exercises contextually (spec §4) — four tabs only.
+// Phone reaches Exercises & Build contextually — three tabs.
 const PHONE_TABS = [
   { to: '/week', label: 'This Week', Icon: WeekIcon },
   { to: '/workouts', label: 'Workouts', Icon: WorkoutsIcon },
-  { to: '/build', label: 'Build', Icon: BuildIcon },
   { to: '/history', label: 'History', Icon: HistoryIcon },
 ];
 
