@@ -51,3 +51,19 @@ export function categoryGradient(category: string | null | undefined): string {
 export function categoryTodayGradient(category: string | null | undefined): string {
   return CATEGORY_TODAY_GRADIENTS[category ?? ''] ?? CATEGORY_TODAY_GRADIENTS.Strength;
 }
+
+/** Gyms have no category, so we derive a stable, varied color per gym by hashing its name
+ * into the same category palette used elsewhere (Workouts cards). */
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = (h * 31 + s.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
+}
+
+export function gymGradient(name: string): string {
+  const keys = WORKOUT_CATEGORIES;
+  const key = keys[hashString(name) % keys.length];
+  return CATEGORY_GRADIENTS[key];
+}

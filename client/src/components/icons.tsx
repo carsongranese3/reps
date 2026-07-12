@@ -40,6 +40,25 @@ export function WorkoutsIcon({ className, size = 18 }: IconProps) {
   );
 }
 
+export function GymIcon({ className, size = 18 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6" />
+    </svg>
+  );
+}
+
 export function BuildIcon({ className, size = 18 }: IconProps) {
   return (
     <svg

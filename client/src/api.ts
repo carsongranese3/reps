@@ -7,6 +7,8 @@ import type {
   Exercise,
   ExerciseAutofillSuggestion,
   ExerciseInput,
+  Gym,
+  GymInput,
   PlanEntry,
   Session,
   SessionInput,
@@ -130,6 +132,30 @@ export function updateWorkout(id: string, body: Partial<WorkoutInput>): Promise<
 
 export function deleteWorkout(id: string): Promise<{ deleted: true; id: string }> {
   return request(`/workouts/${id}`, { method: 'DELETE' });
+}
+
+// ---------------------------------------------------------------------------
+// Gyms
+// ---------------------------------------------------------------------------
+
+export function listGyms(params?: { q?: string; favorite?: boolean }): Promise<Gym[]> {
+  return request(`/gyms${qs({ q: params?.q, favorite: params?.favorite })}`);
+}
+
+export function getGym(id: string): Promise<Gym> {
+  return request(`/gyms/${id}`);
+}
+
+export function createGym(body: GymInput): Promise<Gym> {
+  return request(`/gyms`, { method: 'POST', body: JSON.stringify(body) });
+}
+
+export function updateGym(id: string, body: Partial<GymInput>): Promise<Gym> {
+  return request(`/gyms/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+}
+
+export function deleteGym(id: string): Promise<{ deleted: true; id: string }> {
+  return request(`/gyms/${id}`, { method: 'DELETE' });
 }
 
 // ---------------------------------------------------------------------------

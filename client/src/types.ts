@@ -90,6 +90,23 @@ export interface WorkoutInput {
   exercises: WorkoutExerciseEntry[];
 }
 
+export interface Gym {
+  id: string;
+  name: string;
+  favorite: boolean;
+  image: string | null;
+  equipment: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GymInput {
+  name: string;
+  favorite?: boolean;
+  image?: string | null;
+  equipment?: string[];
+}
+
 export interface PlanEntry {
   day: Weekday;
   workout: Workout | null;

@@ -6,9 +6,9 @@ calls `fetch` ad hoc or touches SQL. Base URL in dev: `http://localhost:4000` (E
 (the server reflects the request origin — single-user, no-auth app). In production the same
 Express server also serves the built client from `client/dist`.
 
-All entity shapes referenced below (Exercise, Workout, Plan entry, Session, Week payload, Stats
-payload) are fully specified in `docs/data-shapes.md` — this document is the routes/params/status
-codes; that document is the JSON shapes.
+All entity shapes referenced below (Exercise, Workout, Gym, Plan entry, Session, Week payload,
+Stats payload) are fully specified in `docs/data-shapes.md` — this document is the
+routes/params/status codes; that document is the JSON shapes.
 
 ## Conventions
 
@@ -199,6 +199,55 @@ Response: `200` → `{ "deleted": true, "id": "..." }` · `404` if not found.
 
 ---
 
+## Gyms (decision #17 — reference library of places + their equipment)
+
+Storage/display only for now: gyms are **not** referenced by workouts, exercises, or sessions —
+no cascade concerns, no filtering by a gym's equipment yet.
+
+### `GET /api/gyms`
+List gyms.
+
+Query params (all optional):
+| Param | Type | Effect |
+|---|---|---|
+| `q` | string | case-insensitive substring match on `name` |
+| `favorite` | `1`/`true` or `0`/`false` | filter by favorite state |
+
+Response: `200` → `Gym[]` (stable insertion order — `created_at`, then row order).
+
+### `GET /api/gyms/:id`
+Response: `200` → `Gym` · `404` if not found.
+
+### `POST /api/gyms`
+Create a gym. **Requires a non-empty `name`.**
+
+Body:
+```jsonc
+{
+  "name": "Home Gym",                              // required, non-empty after trim
+  "favorite": false,                                 // optional, default false
+  "image": null,                                     // optional
+  "equipment": ["Dumbbells", "Pull-up bar"]          // optional, string[] — trimmed, deduped,
+                                                      //   non-strings/blanks dropped
+}
+```
+
+Response: `201` → `Gym` · `400` if `name` is empty/whitespace-only.
+
+### `PUT /api/gyms/:id`
+Update a gym in place (same id, no duplicate). **Patch semantics**: any field omitted from the
+body keeps its current stored value — this is what lets a favorite-heart toggle send just
+`{ "favorite": true }` without resending the whole gym. `name` still can't be patched to blank.
+
+Response: `200` → `Gym` · `400` if the merged `name` is empty · `404` if not found.
+
+### `DELETE /api/gyms/:id`
+Deletes the gym. No cascade — nothing else references a gym.
+
+Response: `200` → `{ "deleted": true, "id": "..." }` · `404` if not found.
+
+---
+
 ## Plan (fixed Mon–Sun weekly template)
 
 ### `GET /api/plan`
@@ -364,5 +413,6 @@ npm install
 cp server/.env.example server/.env   # optional — only needed for the Gemini autofill feature; fill in GEMINI_API_KEY
 npm run seed        # idempotent — seeds exercises/workouts/plan if not already present
 npm run dev:server  # Express API on :4000 (or `npm run dev` to also start the Vite client)
-npm test            # vitest — 83 tests across serialization, CRUD, plan, sessions/PRs, week/streak, Gemini autofill
+npm test            # vitest — 97 tests across serialization, CRUD (workouts/exercises/gyms), plan,
+                     # sessions/PRs, week/streak, Gemini autofill
 ```

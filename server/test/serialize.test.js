@@ -16,6 +16,8 @@ const {
   normalizeWorkoutBody,
   normalizeWorkoutExercises,
   rowToWorkout,
+  normalizeGymBody,
+  rowToGym,
   normalizeSessionEntries,
   rowToSession,
 } = await import('../lib/serialize.js');
@@ -157,6 +159,60 @@ describe('workout normalize -> row -> rowToWorkout round trip', () => {
     const body = normalizeWorkoutBody({ title: 'X', type: 'Bogus', category: 'Bogus', exercises: [] });
     expect(body.type).toBeNull();
     expect(body.category).toBeNull();
+  });
+});
+
+describe('gym normalize -> row -> rowToGym round trip', () => {
+  it('trims name, coerces favorite, and cleans equipment[] (dedupe/trim/garbage-drop)', () => {
+    const body = normalizeGymBody({
+      name: '  Home Gym  ',
+      favorite: 1,
+      image: '  ',
+      equipment: ['Dumbbells', ' Dumbbells ', '  Kettlebells  ', '', null, 42, { foo: 'bar' }, 'Kettlebells'],
+    });
+
+    expect(body.name).toBe('Home Gym');
+    expect(body.favorite).toBe(true);
+    expect(body.image).toBeNull();
+    // trimmed, deduped, non-strings dropped, blanks dropped
+    expect(body.equipment).toEqual(['Dumbbells', 'Kettlebells']);
+
+    const row = {
+      id: 'g1',
+      name: body.name,
+      favorite: body.favorite ? 1 : 0,
+      image: body.image,
+      equipment: JSON.stringify(body.equipment),
+      created_at: 't1',
+      updated_at: 't1',
+    };
+    const out = rowToGym(row);
+    expect(out.equipment).toEqual(['Dumbbells', 'Kettlebells']);
+    expect(out.favorite).toBe(true);
+    expect(out.image).toBeNull();
+  });
+
+  it('normalizeGymBody merges partial updates onto an existing row (favorite-only PUT)', () => {
+    const existingRow = {
+      name: 'Commercial Gym',
+      favorite: 0,
+      image: null,
+      equipment: JSON.stringify(['Barbell', 'Squat rack']),
+    };
+    const merged = normalizeGymBody({ favorite: true }, existingRow);
+    expect(merged.name).toBe('Commercial Gym');
+    expect(merged.equipment).toEqual(['Barbell', 'Squat rack']);
+    expect(merged.favorite).toBe(true);
+  });
+
+  it('rejects an empty/whitespace-only name as blank (route 400s on this)', () => {
+    expect(normalizeGymBody({ name: '   ' }).name).toBe('');
+    expect(normalizeGymBody({}).name).toBe('');
+  });
+
+  it('rowToGym falls back to [] equipment on corrupted JSON', () => {
+    const row = { id: 'g1', name: 'X', favorite: 0, image: null, equipment: '{not json', created_at: 't1', updated_at: 't1' };
+    expect(rowToGym(row).equipment).toEqual([]);
   });
 });
 

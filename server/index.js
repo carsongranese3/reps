@@ -21,6 +21,8 @@ import {
   rowToExercise,
   normalizeWorkoutBody,
   rowToWorkout,
+  normalizeGymBody,
+  rowToGym,
   normalizeSessionEntries,
   rowToSession,
   safeParseArray,
@@ -317,6 +319,72 @@ app.delete('/api/workouts/:id', (req, res) => {
   // Cascade: any plan day pointing at this workout becomes Rest. Sessions keep
   // their snapshot and are intentionally left alone (no FK, orphan-safe).
   db.prepare('UPDATE plan SET workout_id = NULL WHERE workout_id = ?').run(req.params.id);
+  res.json({ deleted: true, id: req.params.id });
+});
+
+// ---------------------------------------------------------------------------
+// Gyms (decision #17) — reference library of places + their equipment.
+// Storage/display only for now: no relation to workouts/exercises.
+// ---------------------------------------------------------------------------
+
+app.get('/api/gyms', (req, res) => {
+  const { q, favorite } = req.query;
+  let sql = 'SELECT * FROM gyms WHERE 1=1';
+  const params = [];
+  if (q) {
+    sql += ' AND LOWER(name) LIKE ?';
+    params.push(`%${String(q).toLowerCase()}%`);
+  }
+  if (favorite !== undefined) {
+    sql += ' AND favorite = ?';
+    params.push(favorite === '1' || favorite === 'true' ? 1 : 0);
+  }
+  sql += ' ORDER BY created_at ASC, rowid ASC';
+  const rows = db.prepare(sql).all(...params);
+  res.json(rows.map(rowToGym));
+});
+
+app.get('/api/gyms/:id', (req, res) => {
+  const row = db.prepare('SELECT * FROM gyms WHERE id = ?').get(req.params.id);
+  if (!row) return notFound(res, 'Gym');
+  res.json(rowToGym(row));
+});
+
+app.post('/api/gyms', (req, res) => {
+  const body = normalizeGymBody(req.body);
+  if (!body.name) return sendError(res, 400, 'Name is required');
+
+  const id = newId();
+  const ts = nowIso();
+  db.prepare(
+    `INSERT INTO gyms (id, name, favorite, image, equipment, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  ).run(id, body.name, body.favorite ? 1 : 0, body.image, JSON.stringify(body.equipment), ts, ts);
+
+  const row = db.prepare('SELECT * FROM gyms WHERE id = ?').get(id);
+  res.status(201).json(rowToGym(row));
+});
+
+app.put('/api/gyms/:id', (req, res) => {
+  const existing = db.prepare('SELECT * FROM gyms WHERE id = ?').get(req.params.id);
+  if (!existing) return notFound(res, 'Gym');
+
+  const body = normalizeGymBody(req.body, existing);
+  if (!body.name) return sendError(res, 400, 'Name is required');
+
+  const ts = nowIso();
+  db.prepare(
+    `UPDATE gyms SET name = ?, favorite = ?, image = ?, equipment = ?, updated_at = ? WHERE id = ?`
+  ).run(body.name, body.favorite ? 1 : 0, body.image, JSON.stringify(body.equipment), ts, req.params.id);
+
+  const row = db.prepare('SELECT * FROM gyms WHERE id = ?').get(req.params.id);
+  res.json(rowToGym(row));
+});
+
+app.delete('/api/gyms/:id', (req, res) => {
+  const existing = db.prepare('SELECT * FROM gyms WHERE id = ?').get(req.params.id);
+  if (!existing) return notFound(res, 'Gym');
+  db.prepare('DELETE FROM gyms WHERE id = ?').run(req.params.id);
   res.json({ deleted: true, id: req.params.id });
 });
 

@@ -207,6 +207,71 @@ export function normalizeSessionEntries(entries) {
     }));
 }
 
+// ---------------------------------------------------------------------------
+// gyms
+// ---------------------------------------------------------------------------
+
+// Dedupes while preserving first-seen order (equipment is a plain checklist +
+// add-custom string[] — see decision #17).
+function dedupeStrings(arr) {
+  const seen = new Set();
+  const out = [];
+  for (const s of arr) {
+    if (!seen.has(s)) {
+      seen.add(s);
+      out.push(s);
+    }
+  }
+  return out;
+}
+
+// Like stringArray, but non-strings are DROPPED rather than coerced (equipment
+// is a checklist + free-typed custom entries — a stray number/object in the
+// payload is garbage, not a label).
+function stringArrayStrict(v) {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((s) => typeof s === 'string')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+// `partial` merges onto `existing` (a raw DB row or already-normalized object) so
+// PUT can act like a patch — e.g. a bare favorite toggle doesn't need to resend
+// the whole gym. Only keys present in `body` are applied. Mirrors normalizeWorkoutBody.
+export function normalizeGymBody(body = {}, existing = null) {
+  const base = existing
+    ? {
+        name: existing.name,
+        favorite: !!existing.favorite,
+        image: existing.image,
+        equipment: safeParseArray(existing.equipment),
+      }
+    : { name: '', favorite: false, image: null, equipment: [] };
+
+  const name = Object.prototype.hasOwnProperty.call(body, 'name') ? trimOrNull(body.name) ?? '' : base.name;
+  const favorite = Object.prototype.hasOwnProperty.call(body, 'favorite') ? !!body.favorite : base.favorite;
+  const image = Object.prototype.hasOwnProperty.call(body, 'image') ? trimOrNull(body.image) : base.image;
+  const equipment = Object.prototype.hasOwnProperty.call(body, 'equipment')
+    ? dedupeStrings(stringArrayStrict(body.equipment))
+    : base.equipment;
+
+  return { name, favorite, image, equipment };
+}
+
+export function rowToGym(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    name: row.name,
+    favorite: !!row.favorite,
+    image: row.image,
+    equipment: safeParseArray(row.equipment),
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
 export function rowToSession(row) {
   if (!row) return null;
   return {

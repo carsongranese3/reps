@@ -151,6 +151,30 @@ const TABLES = {
       created_at: 'TEXT',
     },
   },
+  gyms: {
+    // A reference library of places + their equipment (decision #17). Storage/
+    // display only for now — no relation to workouts/exercises.
+    ddl: `
+      CREATE TABLE IF NOT EXISTS gyms (
+        id         TEXT PRIMARY KEY,
+        name       TEXT NOT NULL,
+        favorite   INTEGER NOT NULL DEFAULT 0,
+        image      TEXT,
+        equipment  TEXT NOT NULL DEFAULT '[]',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `,
+    columns: {
+      id: 'TEXT',
+      name: 'TEXT',
+      favorite: 'INTEGER NOT NULL DEFAULT 0',
+      image: 'TEXT',
+      equipment: "TEXT NOT NULL DEFAULT '[]'",
+      created_at: 'TEXT',
+      updated_at: 'TEXT',
+    },
+  },
 };
 
 function ensureTable(name, def) {
@@ -177,6 +201,7 @@ export function migrate() {
     CREATE INDEX IF NOT EXISTS idx_workouts_favorite ON workouts(favorite);
     CREATE INDEX IF NOT EXISTS idx_sessions_date ON sessions(date);
     CREATE INDEX IF NOT EXISTS idx_sessions_workout_id ON sessions(workout_id);
+    CREATE INDEX IF NOT EXISTS idx_gyms_favorite ON gyms(favorite);
   `);
 
   // Seed the fixed Mon..Sun plan rows if they don't exist yet (day is the PK).

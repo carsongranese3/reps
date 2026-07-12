@@ -1,7 +1,7 @@
 // server/seed.js — idempotent seed data. Safe to run repeatedly (`npm run seed`):
-// exercises/workouts are looked up by name/title first and skipped if already
-// present; the plan template only fills days that are still unset (Rest),
-// so it never clobbers a user's own schedule on re-run.
+// exercises/workouts/gyms are looked up by name/title first and skipped if
+// already present; the plan template only fills days that are still unset
+// (Rest), so it never clobbers a user's own schedule on re-run.
 //
 // Ships the required starter exercises from specs/reps.md §5 with full detail.
 // A handful of supplementary exercises (Lat Pulldown, Seated Cable Row, Barbell
@@ -41,6 +41,18 @@ function upsertExercise(ex) {
     ts,
     ts
   );
+  return id;
+}
+
+function upsertGym(g) {
+  const existing = db.prepare('SELECT id FROM gyms WHERE name = ?').get(g.name);
+  if (existing) return existing.id;
+  const id = crypto.randomUUID();
+  const ts = nowIso();
+  db.prepare(
+    `INSERT INTO gyms (id, name, favorite, image, equipment, created_at, updated_at)
+     VALUES (?, ?, 0, NULL, ?, ?, ?)`
+  ).run(id, g.name, JSON.stringify(g.equipment), ts, ts);
   return id;
 }
 
@@ -448,6 +460,27 @@ const WORKOUTS = [
   },
 ];
 
+const GYMS = [
+  {
+    name: 'Home Gym',
+    equipment: ['Dumbbells', 'Adjustable bench', 'Pull-up bar', 'Resistance bands', 'Kettlebells'],
+  },
+  {
+    name: 'Commercial Gym',
+    equipment: [
+      'Barbell',
+      'Squat rack',
+      'Cable machine',
+      'Leg press',
+      'Smith machine',
+      'Treadmill',
+      'Rowing machine',
+      'Dumbbells',
+      'Bench',
+    ],
+  },
+];
+
 // mon..sun -> workout title, or null for Rest
 const PLAN = {
   mon: 'Pull Day A',
@@ -475,6 +508,12 @@ export function seed() {
     titleToId.set(w.title, upsertWorkout(w, idOf));
   }
 
+  let gymCount = 0;
+  for (const g of GYMS) {
+    upsertGym(g);
+    gymCount++;
+  }
+
   // Only fill plan days that are still unset (Rest) — never clobber a user's plan.
   const setIfEmpty = db.prepare('UPDATE plan SET workout_id = ? WHERE day = ? AND workout_id IS NULL');
   for (const [day, title] of Object.entries(PLAN)) {
@@ -486,7 +525,7 @@ export function seed() {
   // No seed sessions — a new user starts with a genuinely empty History (per
   // decision #4 / spec §5).
 
-  console.log(`Seed complete: ${nameToId.size} exercises, ${titleToId.size} workouts.`);
+  console.log(`Seed complete: ${nameToId.size} exercises, ${titleToId.size} workouts, ${gymCount} gyms.`);
 }
 
 const isMain = process.argv[1] && process.argv[1].endsWith('seed.js');

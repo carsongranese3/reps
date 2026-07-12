@@ -86,3 +86,22 @@ Resolves the Open Questions in `specs/reps.md §7`.
     - **Graceful degradation.** Missing key → the endpoint returns a clear error and the button
       shows "Autofill unavailable (no API key)"; Gemini/network/parse errors → friendly message, no
       crash. The feature is entirely opt-in per click.
+
+## Gym section (added feature)
+
+17. **Gyms — a reference library of places and their equipment.** New top-level section, styled
+    like Workouts.
+    - **Nav:** a **Gym** tab directly under This Week, on both desktop sidebar and phone tab bar.
+      Routes `/gyms`, `/gyms/:id`, `/gyms/new`.
+    - **Entity `gyms`** (mirrors the storage pattern): scalars `id, name, favorite (0/1), image,
+      created_at, updated_at`; JSON column `equipment` = `string[]`. `normalizeGymBody()` /
+      `rowToGym()` serialization boundary; idempotent `gyms` table + migration in `server/db.js`.
+      REST: `GET/POST /api/gyms`, `GET/PUT/DELETE /api/gyms/:id` (PUT patch semantics, like
+      workouts). Seed a couple of example gyms.
+    - **Equipment input** = a checklist of common gym equipment **plus add-custom** (free string).
+      Stored as a plain `string[]`; the common-equipment list is a client-side constant.
+    - **Role for now = storage/display only.** No filtering of exercises/workouts by a gym's
+      equipment and no "current gym" concept yet (deliberately deferred). Per user choice.
+    - **Look = Workouts:** searchable card grid, colored block (color derived from the gym name for
+      variety, since gyms have no category), name, "N equipment" meta, favorite heart, "New gym"
+      button. No category filter chips. Detail page shows equipment as chips + Edit/Delete.

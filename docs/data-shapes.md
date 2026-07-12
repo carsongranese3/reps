@@ -54,6 +54,20 @@ A designed workout.
 | `exercises` | TEXT (JSON array) | ordered `[{ exercise_id, sets, reps, rest }]` — `reps` is a number or a range string (`"8-10"`); `rest` is seconds |
 | `created_at` / `updated_at` | TEXT | ISO datetime |
 
+### `gyms`
+
+A reference library of gyms/places and their equipment (decision #17). Storage/display only for
+now — not referenced by `workouts`, `exercises`, or `sessions`, so `DELETE` has no cascade.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | TEXT PK | `crypto.randomUUID()` |
+| `name` | TEXT | required |
+| `favorite` | INTEGER (0/1) | default 0 |
+| `image` | TEXT | nullable |
+| `equipment` | TEXT (JSON `string[]`) | e.g. `["Dumbbells","Pull-up bar"]` — trimmed, deduped, non-string/blank entries dropped on write |
+| `created_at` / `updated_at` | TEXT | ISO datetime |
+
 ### `plan`
 
 Fixed **Mon–Sun weekly template** (not date-keyed) — decision #4. One row per weekday, seeded
@@ -86,7 +100,7 @@ session survives the deletion of its source workout — see snapshot fields belo
 | `created_at` | TEXT | ISO datetime, server-set |
 
 **Indexes**: `exercises(name)`, `exercises(category)`, `workouts(category)`, `workouts(favorite)`,
-`sessions(date)`, `sessions(workout_id)`.
+`sessions(date)`, `sessions(workout_id)`, `gyms(favorite)`.
 
 **Idempotent boot migration**: on every boot, `server/db.js` reads `PRAGMA table_info` for each
 table and `ALTER TABLE ... ADD COLUMN`s anything missing, so an existing DB upgrades in place
@@ -181,6 +195,20 @@ that produce them.
     { "exercise_id": "uuid", "sets": 4, "reps": "8-10", "rest": 90 }
   ],
   "exercise_count": 7,
+  "created_at": "...",
+  "updated_at": "..."
+}
+```
+
+### Gym
+
+```jsonc
+{
+  "id": "uuid",
+  "name": "Home Gym",
+  "favorite": false,
+  "image": null,
+  "equipment": ["Dumbbells", "Adjustable bench", "Pull-up bar", "Resistance bands", "Kettlebells"],
   "created_at": "...",
   "updated_at": "..."
 }
@@ -283,3 +311,7 @@ never recomputed retroactively.
   Sat → Rest, Sun → 5K Interval Run. Re-running the seed only fills days that are still unset
   (Rest), so it never clobbers a user's own schedule changes.
 - **No seed sessions** — a new user's History is genuinely empty (decision #4 / spec §5).
+- **2 gyms** (decision #17), so the Gym section isn't empty on first run: **Home Gym**
+  (`Dumbbells, Adjustable bench, Pull-up bar, Resistance bands, Kettlebells`) and
+  **Commercial Gym** (`Barbell, Squat rack, Cable machine, Leg press, Smith machine, Treadmill,
+  Rowing machine, Dumbbells, Bench`).
