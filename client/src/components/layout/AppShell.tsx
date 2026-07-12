@@ -4,23 +4,28 @@ import {
   ExercisesIcon,
   GymIcon,
   HistoryIcon,
+  ScheduleIcon,
   WeekIcon,
   WorkoutsIcon,
 } from '../icons';
 import { useWorkouts } from '../../hooks/useWorkouts';
 
 // Build is reached from the "New workout" button on Workouts, so it's not a nav item.
+// Schedule sits directly under This Week (decision #21 pt.4).
 const DESKTOP_NAV = [
   { to: '/week', label: 'This Week', Icon: WeekIcon },
+  { to: '/schedule', label: 'Schedule', Icon: ScheduleIcon },
   { to: '/gyms', label: 'Gym', Icon: GymIcon },
   { to: '/workouts', label: 'Workouts', Icon: WorkoutsIcon },
   { to: '/exercises', label: 'Exercises', Icon: ExercisesIcon },
   { to: '/history', label: 'History', Icon: HistoryIcon },
 ];
 
-// Phone reaches Exercises & Build contextually — four tabs.
+// Phone reaches Exercises & Build contextually — five tabs, Schedule added as the
+// 5th (decision #21 pt.4), right after This Week.
 const PHONE_TABS = [
   { to: '/week', label: 'This Week', Icon: WeekIcon },
+  { to: '/schedule', label: 'Schedule', Icon: ScheduleIcon },
   { to: '/gyms', label: 'Gym', Icon: GymIcon },
   { to: '/workouts', label: 'Workouts', Icon: WorkoutsIcon },
   { to: '/history', label: 'History', Icon: HistoryIcon },

@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useDeleteWorkout, useUpdateWorkout, useWorkout } from '../hooks/useWorkouts';
 import { useExerciseMap } from '../hooks/useExercises';
 import { useGym } from '../hooks/useGyms';
-import { usePlan, useSetPlanDay } from '../hooks/usePlan';
+import { useSchedule, useSetScheduleDay } from '../hooks/useSchedule';
 import { Spinner } from '../components/ui/Spinner';
 import { ErrorState } from '../components/ui/ErrorState';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
@@ -12,7 +12,7 @@ import { MuscleMap } from '../components/MuscleMap';
 import { aggregateWorkoutIntensities, hasMappableMuscles } from '../lib/muscles';
 import { EditIcon, GymIcon, HeartIcon, PlayIcon, TrashIcon, CalendarIcon } from '../components/icons';
 import { categoryGradient } from '../lib/category';
-import { WEEKDAYS, WEEKDAY_LABELS } from '../lib/date';
+import { WEEKDAYS, WEEKDAY_LABELS, weekDatesFor, todayLocalDate, dayOfMonth } from '../lib/date';
 import { ApiError } from '../api';
 
 export function WorkoutDetailPage() {
@@ -23,8 +23,9 @@ export function WorkoutDetailPage() {
   const { data: gym } = useGym(workout?.gym_id ?? undefined);
   const updateWorkout = useUpdateWorkout();
   const deleteWorkout = useDeleteWorkout();
-  const { data: plan } = usePlan();
-  const setPlanDay = useSetPlanDay();
+  const weekDates = weekDatesFor(todayLocalDate());
+  const { data: weekSchedule } = useSchedule(weekDates.mon, weekDates.sun);
+  const setScheduleDay = useSetScheduleDay();
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -131,23 +132,40 @@ export function WorkoutDetailPage() {
       </div>
 
       {scheduleOpen && (
-        <div className="mt-4 flex flex-wrap gap-2 rounded-xl bg-panel p-4">
-          {WEEKDAYS.map((day) => {
-            const current = plan?.find((p) => p.day === day)?.workout?.id;
-            const isThis = current === workout.id;
-            return (
-              <button
-                key={day}
-                type="button"
-                onClick={() => setPlanDay.mutate({ day, workoutId: isThis ? null : workout.id })}
-                className={`rounded-lg px-3.5 py-2 text-sm font-semibold ${
-                  isThis ? 'bg-ink text-white' : 'bg-white text-ink-secondary hover:bg-panel2'
-                }`}
-              >
-                {WEEKDAY_LABELS[day]}
-              </button>
-            );
-          })}
+        <div className="mt-4 rounded-xl bg-panel p-4">
+          <div className="mb-2.5 text-xs font-semibold text-ink-muted">Add to this week</div>
+          <div className="flex flex-wrap gap-2">
+            {WEEKDAYS.map((day) => {
+              const date = weekDates[day];
+              const entry = weekSchedule?.schedule.find((e) => e.date === date);
+              const isThis = !!entry?.workouts.some((w) => w.id === workout.id);
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  onClick={() => {
+                    const baseIds = entry ? entry.workouts.map((w) => w.id) : [];
+                    const nextIds = isThis
+                      ? baseIds.filter((id) => id !== workout.id)
+                      : [...baseIds, workout.id];
+                    // Emptying the day means Rest, not a revert-to-template clear.
+                    setScheduleDay.mutate({
+                      date,
+                      body: nextIds.length === 0 ? { rest: true } : { workout_ids: nextIds },
+                    });
+                  }}
+                  className={`flex flex-col items-center rounded-lg px-3 py-1.5 text-sm font-semibold ${
+                    isThis ? 'bg-ink text-white' : 'bg-white text-ink-secondary hover:bg-panel2'
+                  }`}
+                >
+                  <span>{WEEKDAY_LABELS[day]}</span>
+                  <span className={`text-[11px] ${isThis ? 'text-white/70' : 'text-ink-faint'}`}>
+                    {dayOfMonth(date)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 

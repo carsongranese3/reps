@@ -5,6 +5,7 @@ export type WorkoutType = 'Strength' | 'Hypertrophy' | 'Power';
 export type WorkoutCategory = ExerciseCategory;
 export type Weekday = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 export type DayStatus = 'done' | 'rest' | 'missed' | 'planned';
+export type ScheduleSource = 'schedule' | 'template' | 'rest';
 
 export interface LastTime {
   session_id: string;
@@ -114,6 +115,21 @@ export interface PlanEntry {
   workout: Workout | null;
 }
 
+/** GET/PUT /api/schedule resolved entry (specs/schedule.md §6, docs/data-shapes.md). */
+export interface ScheduleEntry {
+  date: string;
+  source: ScheduleSource;
+  is_set: boolean;
+  workouts: Workout[];
+  status: DayStatus;
+}
+
+/** PUT /api/schedule/:date body — exactly one of these three forms. */
+export type ScheduleDayBody =
+  | { workout_ids: string[] }
+  | { rest: true }
+  | { clear: true };
+
 export interface SessionSetActual {
   weight: number | null;
   reps: number | null;
@@ -165,7 +181,7 @@ export interface WeekDay {
   date: string;
   status: DayStatus;
   is_today: boolean;
-  workout: Workout | null;
+  workouts: Workout[];
 }
 
 export interface WeekPayload {

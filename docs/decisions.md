@@ -154,3 +154,30 @@ Resolves the Open Questions in `specs/reps.md §7`.
       confirms (discards; Pause keeps progress via localStorage + This Week Resume). **Finish**
       confirms only when not every set is logged ("logged X of Y — finish anyway?"); if all sets are
       done it finishes directly. Both styles write the same completed `session`.
+
+21. **Schedule tab — plan the month (date-specific), driving This Week.** New top-level tab under
+    This Week; a month calendar to plan workouts on specific dates. (Full semantics in
+    `specs/schedule.md`.) Resolved user choices:
+    - **Date-specific overrides that drive This Week/streak**, layered over the existing weekly
+      `plan` template: a date's planned workouts = its schedule entries if the date is *set*,
+      otherwise a fallback to the weekly template for that weekday. The weekly template stays as the
+      baseline (and `GET/PUT /api/plan` stays).
+    - **Multiple workouts per day** allowed. New `schedule` table = rows `{date, workout_id}`; a date
+      is "set" if it has ≥1 row. Explicit **Rest** on a date = a rest marker (`workout_id` NULL row)
+      so it overrides the template with nothing (vs. an unset date that falls back). Unset date → no
+      rows → template fallback.
+    - **Interaction:** tap a day → add workout(s) from the library, mark Rest, or clear (back to
+      template). Month navigation (prev/next).
+    - This Week, today, streak, and N-of-M must be recomputed to resolve each date via
+      schedule-override → weekly-template fallback, and to handle multiple workouts per day —
+      defined in `specs/schedule.md`.
+    - **Resolved open questions (orchestrator calls, approved):**
+      1. **N-of-M off-plan accounting:** keep the simple rule (one off-plan credit per day; §5.2).
+      2. **Editing past dates:** allowed, **no warning** (streak just recomputes).
+      3. **Today card with multiple workouts:** primary card for the first + compact rows for the rest.
+      4. **Phone nav:** add **Schedule as a 5th phone tab** (and to the desktop sidebar, under This Week).
+      5–7. **Calendar status overlay ships in v1** (light): mark today + a subtle done/missed on past
+        dates using the resolution rule.
+    - **Cross-cutting contract changes (approved):** `GET /api/week` per-day `workout` (single) →
+      **`workouts[]`** (array), and `today.workout` → `today.workouts[]`; `DELETE /api/workouts/:id`
+      also **deletes** referencing `schedule` rows (never nulls them — NULL means explicit Rest).

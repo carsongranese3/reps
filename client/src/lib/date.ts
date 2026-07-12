@@ -13,6 +13,15 @@ export const WEEKDAY_LABELS: Record<Weekday, string> = {
   sat: 'SAT',
   sun: 'SUN',
 };
+export const WEEKDAY_FULL: Record<Weekday, string> = {
+  mon: 'Monday',
+  tue: 'Tuesday',
+  wed: 'Wednesday',
+  thu: 'Thursday',
+  fri: 'Friday',
+  sat: 'Saturday',
+  sun: 'Sunday',
+};
 export const WEEKDAY_SHORT: Record<Weekday, string> = {
   mon: 'M',
   tue: 'T',
@@ -62,6 +71,61 @@ export function weekDatesFor(dateStr: string): Record<Weekday, string> {
 
 export function dayOfMonth(dateStr: string): number {
   return Number(dateStr.split('-')[2]);
+}
+
+/** Mon-first Weekday key for a local YYYY-MM-DD date string. */
+export function weekdayOfDate(dateStr: string): Weekday {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  return WEEKDAYS[mondayIndex(dt.getDay())];
+}
+
+/** Local YYYY-MM-DD for an arbitrary Date (no UTC conversion). */
+export function formatLocalDate(d: Date): string {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+export interface MonthGridCell {
+  date: string;
+  inMonth: boolean;
+}
+
+/** Whole-weeks grid (Monday-first) covering `month` (0-indexed) of `year` — 4 to 6
+ * week-rows depending on the month's length and starting weekday (specs/schedule.md §2.1). */
+export function getMonthGrid(year: number, month: number): MonthGridCell[] {
+  const firstOfMonth = new Date(year, month, 1);
+  const firstWeekday = mondayIndex(firstOfMonth.getDay());
+  const gridStart = new Date(year, month, 1 - firstWeekday);
+
+  const lastOfMonth = new Date(year, month + 1, 0);
+  const lastWeekday = mondayIndex(lastOfMonth.getDay());
+  const gridEnd = new Date(
+    lastOfMonth.getFullYear(),
+    lastOfMonth.getMonth(),
+    lastOfMonth.getDate() + (6 - lastWeekday)
+  );
+
+  const cells: MonthGridCell[] = [];
+  const cur = new Date(gridStart);
+  while (cur <= gridEnd) {
+    cells.push({ date: formatLocalDate(cur), inMonth: cur.getMonth() === month });
+    cur.setDate(cur.getDate() + 1);
+  }
+  return cells;
+}
+
+export function monthYearLabel(year: number, month: number): string {
+  return new Date(year, month, 1).toLocaleDateString(undefined, {
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+/** Full weekday date label, e.g. "Thursday, Jul 16" (used by the Schedule day editor title). */
+export function fullDateLabel(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  return dt.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
 }
 
 /** Human label used in History rows: Today / Yesterday / weekday / date. */

@@ -10,6 +10,8 @@ import type {
   Gym,
   GymInput,
   PlanEntry,
+  ScheduleDayBody,
+  ScheduleEntry,
   Session,
   SessionInput,
   StatsPayload,
@@ -170,6 +172,29 @@ export function setPlanDay(day: Weekday, workoutId: string | null): Promise<Plan
   return request(`/plan/${day}`, {
     method: 'PUT',
     body: JSON.stringify({ workout_id: workoutId }),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Schedule (specs/schedule.md, decision #21 — date-specific overrides over `plan`)
+// ---------------------------------------------------------------------------
+
+export function getSchedule(
+  from: string,
+  to: string,
+  today: string
+): Promise<{ schedule: ScheduleEntry[] }> {
+  return request(`/schedule${qs({ from, to, today })}`);
+}
+
+export function setScheduleDay(
+  date: string,
+  body: ScheduleDayBody,
+  today: string
+): Promise<ScheduleEntry> {
+  return request(`/schedule/${date}${qs({ today })}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
   });
 }
 

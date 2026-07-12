@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
 import { WeekPage } from './pages/WeekPage';
+import { SchedulePage } from './pages/SchedulePage';
 import { WorkoutsPage } from './pages/WorkoutsPage';
 import { WorkoutDetailPage } from './pages/WorkoutDetailPage';
 import { BuildPage } from './pages/BuildPage';
@@ -20,6 +21,7 @@ export function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/week" replace />} />
         <Route path="/week" element={<WeekPage />} />
+        <Route path="/schedule" element={<SchedulePage />} />
         <Route path="/gyms" element={<GymsPage />} />
         <Route path="/gyms/new" element={<GymFormPage />} />
         <Route path="/gyms/:gymId" element={<GymDetailPage />} />
