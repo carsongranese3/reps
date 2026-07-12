@@ -23,11 +23,20 @@ export interface ActiveExerciseEntry {
   sets: ActiveSetEntry[];
 }
 
+/**
+ * Tracking style, chosen via the mode picker shown after Begin (decisions.md #20).
+ * Persisted on the session so Pause/Resume keeps the chosen style; undefined means
+ * the picker hasn't been answered yet (a freshly-started session, or a resumed one
+ * from before this field existed).
+ */
+export type TrackingMode = 'checklist' | 'guided';
+
 export interface ActiveSession {
   workout_id: string;
   workout_title: string;
   workout_category: string | null;
   started_at: string;
+  mode?: TrackingMode;
   entries: ActiveExerciseEntry[];
 }
 

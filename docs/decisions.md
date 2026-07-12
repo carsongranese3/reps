@@ -138,3 +138,19 @@ Resolves the Open Questions in `specs/reps.md §7`.
       muscle names → canonical regions; unknown names ignored. Colored-box fallback when a
       workout/exercise has no mappable muscles.
     - Gyms are unchanged (no muscles); gym card covers revisited separately.
+
+20. **Workout mode: two tracking styles + finish/pause/cancel.**
+    - After **Begin**, the user picks a tracking style: **Checklist** (the existing free
+      log-everything view) or **Guided** (timed, one set at a time). The choice is persisted on the
+      active session so Pause/Resume keeps it; a resumed session with no saved style re-shows the
+      picker.
+    - **Guided flow (per user spec):** one **set** at a time — show the exercise, "Set X of Y", the
+      target + last-time, and weight/reps inputs (prefilled). Hit **Next** → the set is recorded
+      (completed) → a **rest timer pops up**, counting down from the exercise's configured `rest`
+      (**fixed to the plan, not adjustable**). When it hits 0 it **keeps running** (overtime) rather
+      than auto-advancing; a **Next set** button (which also works during the countdown, doubling as
+      skip) advances to the next set's logging screen. After the final set, Next goes to finish.
+    - **Controls (both styles):** header has **Finish**, **Pause**, **Cancel**. **Cancel** always
+      confirms (discards; Pause keeps progress via localStorage + This Week Resume). **Finish**
+      confirms only when not every set is logged ("logged X of Y — finish anyway?"); if all sets are
+      done it finishes directly. Both styles write the same completed `session`.
