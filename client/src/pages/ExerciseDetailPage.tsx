@@ -83,7 +83,7 @@ export function ExerciseDetailPage() {
               {youTubeId ? (
                 <iframe
                   src={youTubeEmbedUrl(youTubeId)}
-                  title={`${ex.name} demo`}
+                  title={`${ex.name} video`}
                   className="h-full w-full"
                   allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
@@ -99,13 +99,13 @@ export function ExerciseDetailPage() {
                   <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/90">
                     <PlayIcon size={22} color="#1A1815" />
                   </span>
-                  <span className="text-sm font-semibold text-white">Watch demo on YouTube ↗</span>
+                  <span className="text-sm font-semibold text-white">Watch on YouTube ↗</span>
                 </a>
               )}
             </div>
             <div className="flex items-center justify-between gap-2 bg-panel2 px-3 py-1.5">
               <span className="text-[11px] font-bold uppercase tracking-wide text-ink-faint">
-                Demo
+                Video
               </span>
               <a
                 href={ex.video_url}
@@ -125,7 +125,7 @@ export function ExerciseDetailPage() {
             >
               <PlayIcon size={20} />
             </div>
-            <span className="text-sm font-medium">No demo yet</span>
+            <span className="text-sm font-medium">No video yet</span>
           </div>
         )}
       </div>

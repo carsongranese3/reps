@@ -352,7 +352,7 @@ export function ExerciseFormPage() {
 
         <div>
           <label className="flex flex-col gap-1.5 text-sm font-semibold text-ink-secondary">
-            Demo video
+            Video
             <input
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
@@ -382,7 +382,7 @@ export function ExerciseFormPage() {
               <div className="mt-3 aspect-video w-full overflow-hidden rounded-xl bg-black">
                 <iframe
                   src={youTubeEmbedUrl(ytId)}
-                  title="Demo preview"
+                  title="Video preview"
                   className="h-full w-full"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
@@ -394,13 +394,13 @@ export function ExerciseFormPage() {
 
         <div>
           <div className="mb-2 text-sm font-semibold text-ink-secondary">
-            Demo clip {isEdit && existing?.has_demo ? '(replaces the current one)' : '(optional)'}
+            Video clip {isEdit && existing?.has_demo ? '(replaces the current one)' : '(optional)'}
           </div>
           <input
             type="file"
             accept="video/mp4,video/webm,video/quicktime,image/gif,image/png,image/jpeg,image/webp"
             onChange={(e) => setDemoFile(e.target.files?.[0] ?? null)}
-            aria-label="Upload demo clip"
+            aria-label="Upload video clip"
             className="text-sm text-ink-muted"
           />
         </div>
