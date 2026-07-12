@@ -119,7 +119,7 @@ const EXERCISES = [
   {
     name: 'Leg Press',
     category: 'Legs',
-    equipment: 'Machine',
+    equipment: 'Leg press machine',
     difficulty: 'Beginner',
     muscles_worked: ['Quads', 'Glutes', 'Hamstrings'],
     how_to: [
@@ -147,7 +147,7 @@ const EXERCISES = [
   {
     name: 'Seated Leg Curl',
     category: 'Legs',
-    equipment: 'Machine',
+    equipment: 'Leg curl machine',
     difficulty: 'Beginner',
     muscles_worked: ['Hamstrings'],
     how_to: [
@@ -161,7 +161,7 @@ const EXERCISES = [
   {
     name: 'Standing Calf Raise',
     category: 'Legs',
-    equipment: 'Machine',
+    equipment: 'Calf raise machine',
     difficulty: 'Beginner',
     muscles_worked: ['Calves'],
     how_to: [
