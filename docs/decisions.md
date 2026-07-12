@@ -105,3 +105,36 @@ Resolves the Open Questions in `specs/reps.md §7`.
     - **Look = Workouts:** searchable card grid, colored block (color derived from the gym name for
       variety, since gyms have no category), name, "N equipment" meta, favorite heart, "New gym"
       button. No category filter chips. Detail page shows equipment as chips + Edit/Delete.
+
+18. **Assign a workout to a gym + filter Build by equipment** (extends #17, supersedes its
+    "storage/display only" clause).
+    - **`workouts.gym_id`** (nullable TEXT) links a workout to a gym. **`null` = "Any gym"** — the
+      generic option: not a real gym row, never appears in the Gym tab, and applies **no** filtering.
+      New workouts default to it. Threaded through `normalizeWorkoutBody()`/`rowToWorkout()`; no FK
+      enforcement (deleting a gym leaves the workout as "Any gym" — the client treats an unknown
+      `gym_id` as Any gym).
+    - **Build gym selector:** "Any gym" (default) + the user's gyms. When a specific gym is chosen,
+      the exercise library picker **hides** exercises not doable there (per user choice).
+    - **`exerciseDoableAtGym(exercise, gym)`** (shared, testable helper): TRUE if the exercise's
+      `equipment` is empty / `None` / `Bodyweight` (bodyweight is **always** available, per user
+      choice), OR if its `equipment` **loosely matches** any of the gym's `equipment` items —
+      normalize both (lowercase, trim, strip a trailing "s", substring match either direction) to
+      bridge the exercise vocab (`Dumbbell`, `Cable`) vs the gym checklist (`Dumbbells`,
+      `Cable machine`). "Any gym"/`null` → everything is doable.
+    - **Existing exercises are not auto-removed** when a stricter gym is assigned; they stay but are
+      **subtly flagged** "not at this gym" (per user choice). Only new additions are filtered.
+    - **Display:** the assigned gym's name shows on the workout detail (and card where it fits);
+      "Any gym" shows nothing special.
+
+19. **Muscle heat-map visual for workouts/exercises.** A stylized **front + back** body map
+    (`MuscleMap`) highlights the muscles a workout/exercise works, as a **heat map** (muscles hit by
+    more exercises glow stronger). Replaces the colored box on workout cards; shown large on the
+    workout detail and on the exercise detail.
+    - **Client-only** — no backend change. A workout's muscles are aggregated from its exercises'
+      `muscles_worked` via the exercises map (the workout list already returns `exercises[]`).
+    - **Asset:** a hand-authored, bundled **inline SVG** (no external calls, offline-safe), stylized
+      "muscle blocks," tinted in the terracotta accent `#B15834` with opacity/scale by intensity.
+    - **Muscle mapping** (`lib/muscles.ts`): forgiving case-insensitive map from the app's free-text
+      muscle names → canonical regions; unknown names ignored. Colored-box fallback when a
+      workout/exercise has no mappable muscles.
+    - Gyms are unchanged (no muscles); gym card covers revisited separately.

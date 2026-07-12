@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useWorkouts, useUpdateWorkout } from '../hooks/useWorkouts';
+import { useExerciseMap } from '../hooks/useExercises';
 import { Spinner } from '../components/ui/Spinner';
 import { ErrorState } from '../components/ui/ErrorState';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -8,6 +9,8 @@ import { Chip } from '../components/ui/Chip';
 import { HeartIcon, PlusIcon, SearchIcon } from '../components/icons';
 import { categoryGradient, WORKOUT_CATEGORIES } from '../lib/category';
 import { ResumeBanner } from '../components/ResumeBanner';
+import { MuscleMap } from '../components/MuscleMap';
+import { aggregateWorkoutIntensities, hasMappableMuscles } from '../lib/muscles';
 import { ApiError } from '../api';
 import type { Workout } from '../types';
 
@@ -15,12 +18,19 @@ const FILTERS = ['All', ...WORKOUT_CATEGORIES] as const;
 
 function WorkoutCard({ workout }: { workout: Workout }) {
   const updateWorkout = useUpdateWorkout();
+  const { map: exerciseMap } = useExerciseMap();
+  const intensities = aggregateWorkoutIntensities(workout.exercises, exerciseMap);
+  const showMap = hasMappableMuscles(intensities);
+
   return (
     <Link to={`/workouts/${workout.id}`} className="group flex flex-col gap-2.5">
       <div
         className="relative h-[140px] overflow-hidden rounded-card sm:h-[152px]"
-        style={{ background: categoryGradient(workout.category) }}
+        style={showMap ? { backgroundColor: '#F4EEE6' } : { background: categoryGradient(workout.category) }}
       >
+        {showMap && (
+          <MuscleMap view="front" intensities={intensities} className="h-full w-full py-2" />
+        )}
         <button
           type="button"
           onClick={(e) => {

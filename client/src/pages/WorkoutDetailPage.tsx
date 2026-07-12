@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useDeleteWorkout, useUpdateWorkout, useWorkout } from '../hooks/useWorkouts';
 import { useExerciseMap } from '../hooks/useExercises';
+import { useGym } from '../hooks/useGyms';
 import { usePlan, useSetPlanDay } from '../hooks/usePlan';
 import { Spinner } from '../components/ui/Spinner';
 import { ErrorState } from '../components/ui/ErrorState';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
-import { EditIcon, HeartIcon, PlayIcon, TrashIcon, CalendarIcon } from '../components/icons';
+import { ExerciseThumb } from '../components/ui/ExerciseThumb';
+import { MuscleMap } from '../components/MuscleMap';
+import { aggregateWorkoutIntensities, hasMappableMuscles } from '../lib/muscles';
+import { EditIcon, GymIcon, HeartIcon, PlayIcon, TrashIcon, CalendarIcon } from '../components/icons';
 import { categoryGradient } from '../lib/category';
 import { WEEKDAYS, WEEKDAY_LABELS } from '../lib/date';
 import { ApiError } from '../api';
@@ -16,6 +20,7 @@ export function WorkoutDetailPage() {
   const navigate = useNavigate();
   const { data: workout, isLoading, isError, error, refetch } = useWorkout(workoutId);
   const { map: exerciseMap } = useExerciseMap();
+  const { data: gym } = useGym(workout?.gym_id ?? undefined);
   const updateWorkout = useUpdateWorkout();
   const deleteWorkout = useDeleteWorkout();
   const { data: plan } = usePlan();
@@ -23,6 +28,27 @@ export function WorkoutDetailPage() {
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
+
+  const muscleIntensities = workout ? aggregateWorkoutIntensities(workout.exercises, exerciseMap) : {};
+  const showMuscleMap = hasMappableMuscles(muscleIntensities);
+
+  // Every muscle name worked across the workout's exercises, counted by how many
+  // exercises hit it (drives ordering + emphasis), most-worked first.
+  const workedMuscles = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const entry of workout?.exercises ?? []) {
+      const ex = exerciseMap[entry.exercise_id];
+      if (!ex) continue;
+      for (const m of ex.muscles_worked ?? []) {
+        const name = m.trim();
+        if (name) counts.set(name, (counts.get(name) ?? 0) + 1);
+      }
+    }
+    const max = Math.max(1, ...counts.values());
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([name, count]) => ({ name, count, emphasis: count / max }));
+  }, [workout, exerciseMap]);
 
   if (isLoading) return <div className="px-5 pt-6 sm:px-9 sm:pt-8"><Spinner label="Loading workout…" /></div>;
   if (isError || !workout) {
@@ -62,6 +88,11 @@ export function WorkoutDetailPage() {
         <div className="mt-1 text-sm text-white/85">
           {workout.est_minutes} min · {workout.exercise_count} exercise
           {workout.exercise_count === 1 ? '' : 's'}
+          {gym && (
+            <span className="ml-1 inline-flex items-center gap-1">
+              · <GymIcon size={13} className="text-white/85" /> {gym.name}
+            </span>
+          )}
         </div>
       </div>
 
@@ -120,6 +151,43 @@ export function WorkoutDetailPage() {
         </div>
       )}
 
+      {showMuscleMap && (
+        <div className="mt-7 rounded-2xl bg-panel p-5">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-base font-bold text-ink">Muscles worked</h2>
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-ink-faint">
+              <span
+                className="inline-block h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: '#E7E0D4' }}
+              />
+              Light
+              <span
+                className="ml-2 inline-block h-2.5 w-2.5 rounded-full bg-accent"
+              />
+              Heavy
+            </div>
+          </div>
+          <div className="mt-3 flex flex-col gap-5 sm:flex-row sm:items-center">
+            <MuscleMap view="both" intensities={muscleIntensities} className="h-[188px] w-full sm:w-1/2" />
+            <ul className="flex flex-1 flex-wrap content-start gap-2 sm:flex-col sm:flex-nowrap sm:gap-1.5">
+              {workedMuscles.map(({ name, count, emphasis }) => (
+                <li
+                  key={name}
+                  className="flex items-center gap-2 rounded-lg bg-white px-3 py-1.5 text-sm text-ink"
+                >
+                  <span
+                    className="h-2 w-2 flex-none rounded-full bg-accent"
+                    style={{ opacity: 0.35 + emphasis * 0.65 }}
+                  />
+                  <span className="font-medium">{name}</span>
+                  {count > 1 && <span className="text-xs text-ink-faint">×{count}</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
       <h2 className="mb-3 mt-7 text-base font-bold text-ink">Exercises</h2>
       {workout.exercises.length === 0 ? (
         <p className="text-sm text-ink-muted">This workout has no exercises yet.</p>
@@ -140,10 +208,11 @@ export function WorkoutDetailPage() {
                   ex ? 'hover:bg-panel/40' : 'opacity-60'
                 }`}
               >
-                <div
-                  className="h-9 w-9 flex-none rounded-lg"
-                  style={{ backgroundColor: ex ? '#567a3e' : '#C4BBAD' }}
-                />
+                {ex ? (
+                  <ExerciseThumb exercise={ex} className="h-9 w-9 flex-none rounded-lg" iconSize={14} />
+                ) : (
+                  <div className="h-9 w-9 flex-none rounded-lg" style={{ backgroundColor: '#C4BBAD' }} />
+                )}
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[14.5px] font-semibold text-ink">
                     {ex?.name ?? 'Removed exercise'}

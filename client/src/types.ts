@@ -75,6 +75,7 @@ export interface Workout {
   favorite: boolean;
   est_minutes: number;
   image: string | null;
+  gym_id: string | null;
   exercises: WorkoutExerciseEntry[];
   exercise_count: number;
   created_at: string;
@@ -87,6 +88,7 @@ export interface WorkoutInput {
   category?: WorkoutCategory;
   favorite?: boolean;
   image?: string | null;
+  gym_id?: string | null;
   exercises: WorkoutExerciseEntry[];
 }
 

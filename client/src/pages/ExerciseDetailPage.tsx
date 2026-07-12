@@ -4,9 +4,10 @@ import { useDeleteExercise, useExercise } from '../hooks/useExercises';
 import { Spinner } from '../components/ui/Spinner';
 import { ErrorState } from '../components/ui/ErrorState';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
-import { Pill } from '../components/ui/Pill';
 import { EditIcon, PlayIcon, TrashIcon } from '../components/icons';
 import { categoryColor } from '../lib/category';
+import { MuscleMap } from '../components/MuscleMap';
+import { exerciseIntensities, hasMappableMuscles } from '../lib/muscles';
 import { exerciseDemoUrl } from '../api';
 import { ApiError } from '../api';
 import { parseYouTubeId, youTubeEmbedUrl } from '../lib/youtube';
@@ -27,6 +28,8 @@ export function ExerciseDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [playing, setPlaying] = useState(false);
   const youTubeId = ex ? parseYouTubeId(ex.video_url) : null;
+  const muscleIntensities = ex ? exerciseIntensities(ex.muscles_worked ?? []) : {};
+  const showMuscleMap = hasMappableMuscles(muscleIntensities);
 
   if (isLoading) {
     return (
@@ -151,13 +154,28 @@ export function ExerciseDetailPage() {
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {ex.muscles_worked.map((m) => (
-          <Pill key={m}>{m}</Pill>
-        ))}
-        {ex.equipment && <Pill>{ex.equipment}</Pill>}
-        {ex.difficulty && <Pill>{ex.difficulty}</Pill>}
-      </div>
+      <dl className="mt-4 flex flex-col gap-2 text-sm">
+        {[
+          { label: 'Category', value: ex.category },
+          { label: 'Equipment', value: ex.equipment },
+          { label: 'Difficulty', value: ex.difficulty },
+          { label: 'Muscles', value: ex.muscles_worked.join(' · ') || null },
+        ]
+          .filter((row) => row.value)
+          .map((row) => (
+            <div key={row.label} className="flex gap-3">
+              <dt className="w-24 flex-none font-semibold text-ink-faint">{row.label}</dt>
+              <dd className="font-medium text-ink">{row.value}</dd>
+            </div>
+          ))}
+      </dl>
+
+      {showMuscleMap && (
+        <div className="mt-5 rounded-2xl bg-panel p-5">
+          <h2 className="text-xs font-bold uppercase tracking-wide text-ink-faint">Muscles worked</h2>
+          <MuscleMap view="both" intensities={muscleIntensities} className="mt-3 h-[172px]" />
+        </div>
+      )}
 
       <div className="mb-3 mt-6 text-xs font-bold uppercase tracking-wide text-ink-faint">How to</div>
       {ex.how_to.length === 0 ? (
