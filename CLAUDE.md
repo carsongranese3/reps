@@ -53,11 +53,18 @@ shared, hosted database so your computer and phone stay in sync (single user; no
   assets by the same server or a static host pointed at the API.
 
 ## Data sources
-- **None external.** The exercise library is **user-built**: you populate the `exercises` table
-  yourself through the app (create/edit/delete), and it may ship with a small seed set to start.
-  Each exercise has name, muscles worked, equipment, difficulty, a bundled demo asset (clip or
-  illustration stored on the server, **no external CDN**), and numbered "how to" steps. See
-  `docs/data-shapes.md` for the exact shapes.
+- **Core data is user-built, none external.** The exercise library is populated by the user through
+  the app (create/edit/delete), seeded with a small starter set. Each exercise has name, muscles
+  worked, equipment, difficulty, a demo asset (clip stored on the server, **no external CDN**), and
+  numbered "how to" steps. See `docs/data-shapes.md` for the exact shapes.
+- **Gemini — optional autofill assist (the one external API).** The add/edit-exercise form has an
+  **Autofill** action that calls Google's Gemini API **server-side** to suggest an exercise's text
+  fields (category, equipment, difficulty, muscles, how-to steps, tags) plus a **best-effort,
+  unverified YouTube demo URL** from just the name. It is **opt-in per click**, results are shown
+  for the user to **review/edit before saving**, and nothing is auto-sent. The API key lives only in
+  `server/.env` (`GEMINI_API_KEY`), is **never** shipped to the client, and the feature degrades
+  gracefully (clear error) when the key is absent. This is the sole external dependency; all stored
+  data remains the user's own.
 - Refresh requirements: none — everything is served from your own database and disk.
 
 ## Conventions
@@ -70,6 +77,9 @@ shared, hosted database so your computer and phone stay in sync (single user; no
   encoding happens. Components and routes speak real arrays/objects, never JSON strings.
 - The frontend goes through a typed API client module; components never call `fetch` ad hoc or
   build SQL. All persistence is server-side through the REST API.
+- **Secrets never touch the client.** The Gemini key (and any future secret) stays in `server/.env`
+  and is read only by the server; the browser calls our own `POST /api/exercises/autofill`, which
+  makes the Gemini call. Never expose the key in client code, the bundle, or any API response.
 - Store all demo media on the server disk and stream it; never hotlink external images/video.
 - Field names are defined in specs and `docs/data-shapes.md` — match them exactly, don't invent.
 - TypeScript strict; keep components small and typed.

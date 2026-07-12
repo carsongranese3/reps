@@ -25,4 +25,6 @@ client/node_modules/
 *.log
 .env
 .env.local
+server/.env
+!server/.env.example
 *.tsbuildinfo

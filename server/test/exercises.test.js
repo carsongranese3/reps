@@ -82,6 +82,33 @@ describe('Exercises CRUD', () => {
     expect(list.body.length).toBe(3); // still 3, not duplicated
   });
 
+  it('round-trips video_url through create and edit (unverified demo link)', async () => {
+    const created = await request(ctx.app).post('/api/exercises').send({
+      name: 'Incline Dumbbell Press',
+      category: 'Push',
+      video_url: '  https://www.youtube.com/watch?v=abc123  ',
+    });
+    expect(created.status).toBe(201);
+    expect(created.body.video_url).toBe('https://www.youtube.com/watch?v=abc123');
+
+    const fetched = await request(ctx.app).get(`/api/exercises/${created.body.id}`);
+    expect(fetched.body.video_url).toBe('https://www.youtube.com/watch?v=abc123');
+
+    // A non-http(s) value is dropped to null rather than stored as garbage.
+    const updated = await request(ctx.app)
+      .put(`/api/exercises/${created.body.id}`)
+      .send({ video_url: 'not a real url' });
+    expect(updated.status).toBe(200);
+    expect(updated.body.video_url).toBeNull();
+
+    // Omitting video_url on a PUT preserves the existing value (patch semantics).
+    await request(ctx.app).put(`/api/exercises/${created.body.id}`).send({ video_url: 'https://youtu.be/xyz' });
+    const patched = await request(ctx.app).put(`/api/exercises/${created.body.id}`).send({ difficulty: 'Advanced' });
+    expect(patched.body.video_url).toBe('https://youtu.be/xyz');
+
+    await request(ctx.app).delete(`/api/exercises/${created.body.id}`);
+  });
+
   it('GET demo 404s when the exercise has no demo file', async () => {
     const res = await request(ctx.app).get(`/api/exercises/${id}/demo`);
     expect(res.status).toBe(404);

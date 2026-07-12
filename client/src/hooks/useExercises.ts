@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  autofillExercise,
   createExercise,
   deleteExercise,
   getExercise,
@@ -60,6 +61,14 @@ export function useDeleteExercise() {
   return useMutation({
     mutationFn: (id: string) => deleteExercise(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['exercises'] }),
+  });
+}
+
+/** AI Autofill (decision #16) — never invalidates any query; it only returns a
+ * suggestion for the caller to merge into local form state. */
+export function useAutofillExercise() {
+  return useMutation({
+    mutationFn: (name: string) => autofillExercise(name),
   });
 }
 

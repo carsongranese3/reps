@@ -29,6 +29,7 @@ The user-built movement database.
 | `demo_file` | TEXT | bare filename on disk under `server/media/`; **never returned by the API** |
 | `image` | TEXT | optional small thumbnail reference/URL, nullable |
 | `source_url` | TEXT | optional, nullable |
+| `video_url` | TEXT | YouTube demo link, nullable — set manually or via the Gemini Autofill suggestion (decision #16); only ever stored if it's a well-formed http(s) URL, otherwise coerced to `NULL`. Renders as an inline embed + library thumbnail. Does **not** power the local seek-per-step demo (that's `demo_file`) |
 | `muscles_worked` | TEXT (JSON `string[]`) | e.g. `["Chest","Triceps"]` |
 | `how_to` | TEXT (JSON `string[]`) | ordered numbered steps |
 | `step_times` | TEXT (JSON `number[]`) | seconds, positionally parallel to `how_to`; `[]` if lengths don't match |
@@ -113,6 +114,29 @@ the actual bytes live at `server/media/<exerciseId>.<ext>`. Two upload paths:
 
 ---
 
+## Gemini autofill (decision #16)
+
+The **only** external API this app calls, and only server-side (`server/lib/gemini.js`). `POST
+/api/exercises/autofill` (see `docs/api.md`) sends just an exercise `name` to Google Gemini and
+returns a **suggestion** object — never persisted directly, never touching `exercises` until the
+user reviews it in the form and hits Save via the normal `POST`/`PUT`. The suggestion shape:
+
+```jsonc
+{
+  "category": "Push" | null,          // one of Strength|Push|Pull|Legs|Cardio|Mobility, or null
+  "equipment": "Barbell" | null,
+  "difficulty": "Intermediate" | null,
+  "muscles_worked": ["Chest", "Triceps"],
+  "how_to": ["Lie flat...", "Unrack...", "Lower...", "Press up."],
+  "tags": ["compound", "push"],
+  "video_url": "https://www.youtube.com/watch?v=..." | null   // YouTube demo link
+}
+```
+
+Env: `GEMINI_API_KEY` (required for the feature to work; the server otherwise still boots and
+runs fine, the endpoint just returns `501`) and `GEMINI_MODEL` (default `gemini-2.0-flash`), both
+read from `server/.env` (see `server/.env.example`), never exposed to the client.
+
 ## API entity shapes (what `rowTo*()` returns)
 
 These are the exact JSON shapes the REST API sends/receives — see `docs/api.md` for the routes
@@ -133,6 +157,7 @@ that produce them.
   "tags": ["compound", "push"],
   "image": null,
   "source_url": null,
+  "video_url": null, // YouTube demo link (manual or Gemini Autofill, decision #16); null if none
   "has_demo": false,
   "created_at": "2026-07-01T12:00:00.000Z",
   "updated_at": "2026-07-01T12:00:00.000Z"

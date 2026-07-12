@@ -5,6 +5,7 @@
 
 import type {
   Exercise,
+  ExerciseAutofillSuggestion,
   ExerciseInput,
   PlanEntry,
   Session,
@@ -95,6 +96,10 @@ export function uploadExerciseDemo(id: string, file: File): Promise<Exercise> {
 
 export function exerciseDemoUrl(id: string): string {
   return `/api/exercises/${id}/demo`;
+}
+
+export function autofillExercise(name: string): Promise<{ suggestion: ExerciseAutofillSuggestion }> {
+  return request(`/exercises/autofill`, { method: 'POST', body: JSON.stringify({ name }) });
 }
 
 // ---------------------------------------------------------------------------

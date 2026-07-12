@@ -63,3 +63,26 @@ Resolves the Open Questions in `specs/reps.md §7`.
     Cardio workouts reference real movements. No seed sessions.
 15. **PUT is patch semantics** (merge onto existing row) for workouts & exercises — supports cheap
     favorite-toggle-only updates.
+
+## Gemini autofill (added feature)
+
+16. **AI Autofill on the add/edit-exercise form.** An **Autofill** action calls Google **Gemini**
+    to populate an exercise's fields from just its **name**. This adds the app's **one** external
+    API (reverses the earlier "no external API" stance — recorded here deliberately).
+    - **Server-side only.** New endpoint `POST /api/exercises/autofill` `{name}` → the server calls
+      Gemini and returns suggested fields. The key (`GEMINI_API_KEY`) lives in `server/.env`, is
+      never sent to the client, never returned in a response, never committed. Model configurable
+      via `GEMINI_MODEL` (default `gemini-2.0-flash`). Env loaded via
+      `node --env-file-if-exists=server/.env`.
+    - **Fills all text fields** (category, equipment, difficulty, muscles_worked, how_to, tags) and
+      **overwrites** the current form values; **nothing saves until the user hits Save** (they
+      review/edit first). Per user choice.
+    - **Video = YouTube link.** Gemini also returns a best-effort YouTube URL, stored in the
+      `exercises.video_url` column. The user can also paste one manually. It renders as an inline
+      embed on the exercise detail and in the edit form, and its thumbnail becomes the exercise's
+      library photo. It does **not** power the local seek-per-step demo (that still needs a real
+      uploaded clip in `demo_file`). (This is a single-user personal app — earlier "unverified"
+      labeling was removed at the user's request; a bad link simply shows no player/thumbnail.)
+    - **Graceful degradation.** Missing key → the endpoint returns a clear error and the button
+      shows "Autofill unavailable (no API key)"; Gemini/network/parse errors → friendly message, no
+      crash. The feature is entirely opt-in per click.

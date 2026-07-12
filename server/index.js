@@ -30,6 +30,7 @@ import { computeWeekPayload, defaultTodayStr, isValidDateStr } from './lib/week.
 import { computeStats } from './lib/stats.js';
 import { getLastTime } from './lib/lastTime.js';
 import { upload, saveDraft, claimDraft, saveDirectToExercise, removeExerciseDemo, sweepStaleDrafts, streamDemo } from './lib/media.js';
+import { autofillExercise, AutofillError } from './lib/gemini.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -93,8 +94,8 @@ app.post('/api/exercises', (req, res) => {
   const ts = nowIso();
   db.prepare(
     `INSERT INTO exercises
-      (id, name, category, equipment, difficulty, demo_file, image, source_url, muscles_worked, how_to, step_times, tags, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?)`
+      (id, name, category, equipment, difficulty, demo_file, image, source_url, video_url, muscles_worked, how_to, step_times, tags, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     id,
     body.name,
@@ -103,6 +104,7 @@ app.post('/api/exercises', (req, res) => {
     body.difficulty,
     body.image,
     body.source_url,
+    body.video_url,
     JSON.stringify(body.muscles_worked),
     JSON.stringify(body.how_to),
     JSON.stringify(body.step_times),
@@ -135,7 +137,7 @@ app.put('/api/exercises/:id', (req, res) => {
   const ts = nowIso();
   db.prepare(
     `UPDATE exercises SET
-      name = ?, category = ?, equipment = ?, difficulty = ?, image = ?, source_url = ?,
+      name = ?, category = ?, equipment = ?, difficulty = ?, image = ?, source_url = ?, video_url = ?,
       muscles_worked = ?, how_to = ?, step_times = ?, tags = ?, updated_at = ?
      WHERE id = ?`
   ).run(
@@ -145,6 +147,7 @@ app.put('/api/exercises/:id', (req, res) => {
     body.difficulty,
     body.image,
     body.source_url,
+    body.video_url,
     JSON.stringify(body.muscles_worked),
     JSON.stringify(body.how_to),
     JSON.stringify(body.step_times),
@@ -170,6 +173,26 @@ app.delete('/api/exercises/:id', (req, res) => {
   db.prepare('DELETE FROM exercises WHERE id = ?').run(req.params.id);
   removeExerciseDemo(req.params.id);
   res.json({ deleted: true, id: req.params.id });
+});
+
+// AI Autofill (decision #16) — suggests fields from just a name via Google Gemini.
+// Server-side only; never creates/modifies an exercise, only returns a suggestion
+// for the client to review and the user to explicitly Save.
+app.post('/api/exercises/autofill', async (req, res) => {
+  const name = req.body && typeof req.body.name === 'string' ? req.body.name.trim() : '';
+  if (!name) return sendError(res, 400, 'name is required');
+
+  try {
+    const suggestion = await autofillExercise(name);
+    res.json({ suggestion });
+  } catch (err) {
+    if (err instanceof AutofillError && err.code === 'missing_key') {
+      return sendError(res, 501, err.message);
+    }
+    // Never leak upstream/network internals to the client.
+    console.error('Autofill error:', err);
+    return sendError(res, 502, 'Autofill is temporarily unavailable — could not get a suggestion from Gemini');
+  }
 });
 
 // Draft upload — used before an exercise has an id yet (create flow).

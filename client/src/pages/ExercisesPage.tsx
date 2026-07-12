@@ -5,8 +5,9 @@ import { Spinner } from '../components/ui/Spinner';
 import { ErrorState } from '../components/ui/ErrorState';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Chip } from '../components/ui/Chip';
-import { PlayIcon, PlusIcon, SearchIcon } from '../components/icons';
-import { categoryColor, WORKOUT_CATEGORIES } from '../lib/category';
+import { PlusIcon, SearchIcon } from '../components/icons';
+import { WORKOUT_CATEGORIES } from '../lib/category';
+import { ExerciseThumb } from '../components/ui/ExerciseThumb';
 import { ApiError } from '../api';
 
 const FILTERS = ['All', ...WORKOUT_CATEGORIES] as const;
@@ -104,12 +105,7 @@ export function ExercisesPage() {
               to={`/exercises/${ex.id}`}
               className="flex flex-col gap-2.5 rounded-card border border-black/[.06] bg-white p-3.5 hover:bg-panel/30"
             >
-              <div
-                className="relative flex h-20 items-center justify-center rounded-lg"
-                style={{ backgroundColor: categoryColor(ex.category) }}
-              >
-                <PlayIcon size={18} />
-              </div>
+              <ExerciseThumb exercise={ex} className="h-20 rounded-lg" />
               <div>
                 <div className="truncate text-sm font-semibold text-ink">{ex.name}</div>
                 <div className="truncate text-xs text-ink-muted">{ex.muscles_worked.join(' · ') || '—'}</div>

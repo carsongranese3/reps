@@ -25,6 +25,7 @@ export interface Exercise {
   tags: string[];
   image: string | null;
   source_url: string | null;
+  video_url: string | null;
   has_demo: boolean;
   created_at: string;
   updated_at: string;
@@ -43,7 +44,20 @@ export interface ExerciseInput {
   tags?: string[];
   image?: string | null;
   source_url?: string | null;
+  video_url?: string | null;
   draft_token?: string;
+}
+
+/** Shape returned by POST /api/exercises/autofill — merges into the add/edit form,
+ * overwriting current values (decision #16). `video_url` is a YouTube demo link. */
+export interface ExerciseAutofillSuggestion {
+  category: ExerciseCategory | null;
+  equipment: string | null;
+  difficulty: string | null;
+  muscles_worked: string[];
+  how_to: string[];
+  tags: string[];
+  video_url: string | null;
 }
 
 export interface WorkoutExerciseEntry {

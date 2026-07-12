@@ -6,13 +6,14 @@
   "description": "Reps — personal workout tracker. Express + better-sqlite3 server, React + Vite client.",
   "scripts": {
     "dev": "concurrently -n server,client -c blue,magenta \"npm:dev:server\" \"npm:dev:client\"",
-    "dev:server": "node --watch server/index.js",
+    "dev:server": "node --env-file-if-exists=server/.env --watch server/index.js",
     "dev:client": "npm run dev --prefix client",
     "build": "npm run build:client && echo 'server needs no build step'",
     "build:client": "npm run build --prefix client",
-    "start": "NODE_ENV=production node server/index.js",
+    "start": "NODE_ENV=production node --env-file-if-exists=server/.env server/index.js",
     "test": "vitest run",
-    "seed": "node server/seed.js"
+    "seed": "node server/seed.js",
+    "import:exercises": "node server/importExercises.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.3.0",
@@ -26,6 +27,6 @@
     "vitest": "^4.1.10"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20.20"
   }
 }

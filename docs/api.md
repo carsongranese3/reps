@@ -57,6 +57,8 @@ Body:
   "tags": ["compound"],                 // optional, string[]
   "image": null,                        // optional
   "source_url": null,                   // optional
+  "video_url": null,                    // optional — YouTube demo link (see decision #16);
+                                         //   only kept if it's a well-formed http(s) URL, else stored as null
   "draft_token": "..."                  // optional — claims a prior POST /api/exercises/demo/draft upload as this exercise's demo
 }
 ```
@@ -65,7 +67,9 @@ Response: `201` → `Exercise` · `400` if `name` is empty or `category` is inva
 ### `PUT /api/exercises/:id`
 Update an exercise in place (same id, no duplicate). Body: same shape as `POST`, but any field you
 omit keeps its current value (patch semantics) — `name` still can't be blanked out. `draft_token`
-may also be supplied here to replace the demo.
+may also be supplied here to replace the demo. `video_url` follows the same patch semantics: omit
+it to keep the current value, send `null`/an empty string to clear it, or send a non-http(s) value
+to have it dropped to `null`.
 
 Response: `200` → `Exercise` · `400` invalid `name`/`category` · `404` if not found.
 
@@ -75,6 +79,43 @@ Deletes the exercise row and its demo file on disk, if any. Workouts/sessions th
 placeholder when a lookup misses) — this is intentionally never a hard block.
 
 Response: `200` → `{ "deleted": true, "id": "..." }` · `404` if not found.
+
+### `POST /api/exercises/autofill`
+AI Autofill (decision #16). Calls Google **Gemini** server-side to suggest an exercise's fields
+from just its **name**. **Never creates or modifies an exercise** — it only returns a suggestion;
+the client fills the add/edit form and the user must still hit Save (`POST`/`PUT` as normal) for
+anything to persist. The Gemini API key lives only in `server/.env` (`GEMINI_API_KEY`) and is never
+sent to the client or echoed in any response.
+
+Body:
+```jsonc
+{ "name": "Barbell Bench Press" }   // required, non-empty after trim
+```
+
+Response `200`:
+```jsonc
+{
+  "suggestion": {
+    "category": "Push",                 // one of Strength|Push|Pull|Legs|Cardio|Mobility, or null if Gemini's guess didn't match
+    "equipment": "Barbell",             // string or null
+    "difficulty": "Intermediate",       // string or null (free text; Gemini is steered toward Beginner|Intermediate|Advanced)
+    "muscles_worked": ["Chest", "Triceps"],
+    "how_to": ["Lie flat, feet planted...", "Unrack and hold...", "Lower to the chest...", "Press back up."],
+    "tags": ["compound", "push"],
+    "video_url": "https://www.youtube.com/watch?v=..." // YouTube demo link, or null
+  }
+}
+```
+This is the exact shape of the `Exercise` fields the client should merge into its form state
+(overwriting current values per user choice — decision #16); it does not include `id`, `name`,
+`image`, `source_url`, `step_times`, `has_demo`, or timestamps.
+
+Errors:
+- `400` — `name` missing/blank: `{ "error": { "message": "name is required" } }`
+- `501` — no `GEMINI_API_KEY` configured: `{ "error": { "message": "Autofill unavailable — no GEMINI_API_KEY configured" } }`
+  (the client should show this as "Autofill unavailable (no API key)")
+- `502` — Gemini network/HTTP/parse failure: `{ "error": { "message": "Autofill is temporarily unavailable — could not get a suggestion from Gemini" } }`
+  (upstream error internals are never leaked)
 
 ### `POST /api/exercises/demo/draft`
 Upload a demo file **before** the exercise has an id (create-exercise flow). `multipart/form-data`
@@ -309,12 +350,19 @@ Trivial liveness check. Response: `200` → `{ "ok": true }`.
 | `PORT` | `4000` | Express listen port |
 | `REPS_DB_PATH` | `server/reps.db` | override the SQLite file location (used by the test suite to point at scratch files) |
 | `REPS_MEDIA_DIR` | `server/media` | override the media root (drafts live at `<dir>/drafts`) |
+| `GEMINI_API_KEY` | *(unset)* | Google Gemini key that powers `POST /api/exercises/autofill` (decision #16). Lives in `server/.env` (gitignored, see `server/.env.example`), never sent to the client. Missing key → the endpoint returns `501` and the feature degrades gracefully; everything else in the app works with no key at all. |
+| `GEMINI_MODEL` | `gemini-2.0-flash` | which Gemini model the autofill endpoint calls |
+
+`server/.env` (if present) is loaded automatically via Node's `--env-file-if-exists` flag in the
+`dev:server`/`start` npm scripts — no dotenv dependency, and the app boots fine with no `.env` at
+all (autofill just returns `501`).
 
 ## Running it
 
 ```bash
 npm install
+cp server/.env.example server/.env   # optional — only needed for the Gemini autofill feature; fill in GEMINI_API_KEY
 npm run seed        # idempotent — seeds exercises/workouts/plan if not already present
 npm run dev:server  # Express API on :4000 (or `npm run dev` to also start the Vite client)
-npm test            # vitest — 53 tests across serialization, CRUD, plan, sessions/PRs, week/streak
+npm test            # vitest — 83 tests across serialization, CRUD, plan, sessions/PRs, week/streak, Gemini autofill
 ```

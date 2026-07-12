@@ -18,15 +18,28 @@ export function safeParseArray(json, fallback = []) {
   }
 }
 
-function trimOrNull(v) {
+export function trimOrNull(v) {
   if (v === undefined || v === null) return null;
   const s = String(v).trim();
   return s.length ? s : null;
 }
 
-function stringArray(v) {
+export function stringArray(v) {
   if (!Array.isArray(v)) return [];
   return v.map((s) => String(s ?? '').trim()).filter(Boolean);
+}
+
+// Keeps only well-formed http(s) URLs (used for source_url/video_url); anything
+// else — blank, malformed, non-http(s) scheme — collapses to null.
+export function httpUrlOrNull(v) {
+  const s = trimOrNull(v);
+  if (!s) return null;
+  try {
+    const parsed = new URL(s);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? s : null;
+  } catch {
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -53,8 +66,11 @@ export function normalizeExerciseBody(body = {}) {
   const tags = stringArray(body.tags);
   const image = trimOrNull(body.image);
   const source_url = trimOrNull(body.source_url);
+  // Best-effort/unverified YouTube link (Gemini autofill or manual entry) —
+  // only kept if it's a real http(s) URL, else null. See decision #16.
+  const video_url = httpUrlOrNull(body.video_url);
 
-  return { name, category, equipment, difficulty, muscles_worked, how_to, step_times, tags, image, source_url };
+  return { name, category, equipment, difficulty, muscles_worked, how_to, step_times, tags, image, source_url, video_url };
 }
 
 export function hasDemoFile(demo_file) {
@@ -80,6 +96,7 @@ export function rowToExercise(row) {
     tags: safeParseArray(row.tags),
     image: row.image,
     source_url: row.source_url,
+    video_url: row.video_url ?? null,
     has_demo: hasDemoFile(row.demo_file),
     created_at: row.created_at,
     updated_at: row.updated_at,

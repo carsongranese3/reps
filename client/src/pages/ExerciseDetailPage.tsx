@@ -9,6 +9,7 @@ import { EditIcon, PlayIcon, TrashIcon } from '../components/icons';
 import { categoryColor } from '../lib/category';
 import { exerciseDemoUrl } from '../api';
 import { ApiError } from '../api';
+import { parseYouTubeId, youTubeEmbedUrl } from '../lib/youtube';
 
 interface NavState {
   from?: string;
@@ -25,6 +26,7 @@ export function ExerciseDetailPage() {
   const deleteExercise = useDeleteExercise();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const youTubeId = ex ? parseYouTubeId(ex.video_url) : null;
 
   if (isLoading) {
     return (
@@ -75,6 +77,46 @@ export function ExerciseDetailPage() {
               </span>
             </button>
           )
+        ) : ex.video_url ? (
+          <div className="flex h-full w-full flex-col">
+            <div className="flex-1">
+              {youTubeId ? (
+                <iframe
+                  src={youTubeEmbedUrl(youTubeId)}
+                  title={`${ex.name} demo`}
+                  className="h-full w-full"
+                  allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <a
+                  href={ex.video_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex h-full w-full flex-col items-center justify-center gap-2 text-ink-faint hover:bg-panel/60"
+                  style={{ backgroundColor: categoryColor(ex.category) }}
+                >
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/90">
+                    <PlayIcon size={22} color="#1A1815" />
+                  </span>
+                  <span className="text-sm font-semibold text-white">Watch demo on YouTube ↗</span>
+                </a>
+              )}
+            </div>
+            <div className="flex items-center justify-between gap-2 bg-panel2 px-3 py-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-wide text-ink-faint">
+                Demo
+              </span>
+              <a
+                href={ex.video_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-none text-xs font-semibold text-accent hover:underline"
+              >
+                YouTube ↗
+              </a>
+            </div>
+          </div>
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-ink-faint">
             <div

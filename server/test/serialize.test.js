@@ -87,6 +87,26 @@ describe('exercise normalize -> row -> rowToExercise round trip', () => {
     });
     expect(body.step_times).toEqual([]);
   });
+
+  it('keeps a well-formed http(s) video_url, trimmed', () => {
+    const body = normalizeExerciseBody({ name: 'X', video_url: '  https://www.youtube.com/watch?v=abc123  ' });
+    expect(body.video_url).toBe('https://www.youtube.com/watch?v=abc123');
+
+    const row = { id: 'ex1', name: 'X', muscles_worked: '[]', how_to: '[]', step_times: '[]', tags: '[]', video_url: body.video_url, created_at: 't1', updated_at: 't1' };
+    expect(rowToExercise(row).video_url).toBe('https://www.youtube.com/watch?v=abc123');
+  });
+
+  it('drops a non-http(s) or malformed video_url to null', () => {
+    expect(normalizeExerciseBody({ name: 'X', video_url: 'not a url' }).video_url).toBeNull();
+    expect(normalizeExerciseBody({ name: 'X', video_url: 'ftp://example.com/x' }).video_url).toBeNull();
+    expect(normalizeExerciseBody({ name: 'X', video_url: '' }).video_url).toBeNull();
+    expect(normalizeExerciseBody({ name: 'X' }).video_url).toBeNull();
+  });
+
+  it('rowToExercise defaults a missing video_url column to null', () => {
+    const row = { id: 'ex1', name: 'X', muscles_worked: '[]', how_to: '[]', step_times: '[]', tags: '[]', created_at: 't1', updated_at: 't1' };
+    expect(rowToExercise(row).video_url).toBeNull();
+  });
 });
 
 describe('workout normalize -> row -> rowToWorkout round trip', () => {
