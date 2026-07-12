@@ -38,6 +38,8 @@ export default defineConfig({
   ],
   server: {
     port: 5173,
+    host: true, // listen on all interfaces so the phone can reach it over Tailscale
+    allowedHosts: true, // allow the Tailscale hostname (dev only)
     proxy: {
       '/api': {
         target: 'http://localhost:4000',
