@@ -28,7 +28,17 @@ import {
   safeParseArray,
 } from './lib/serialize.js';
 import { computePriorBestMap, detectPRs } from './lib/pr.js';
-import { computeWeekPayload, defaultTodayStr, isValidDateStr } from './lib/week.js';
+import {
+  computeWeekPayload,
+  computeScheduleEntry,
+  buildResolutionCtx,
+  getSessionDatesSet,
+  defaultTodayStr,
+  isValidDateStr,
+  toDateOnlyUTC,
+  addDaysUTC,
+  formatDateOnly,
+} from './lib/week.js';
 import { computeStats } from './lib/stats.js';
 import { getLastTime } from './lib/lastTime.js';
 import { upload, saveDraft, claimDraft, saveDirectToExercise, removeExerciseDemo, sweepStaleDrafts, streamDemo } from './lib/media.js';
@@ -319,6 +329,11 @@ app.delete('/api/workouts/:id', (req, res) => {
   // Cascade: any plan day pointing at this workout becomes Rest. Sessions keep
   // their snapshot and are intentionally left alone (no FK, orphan-safe).
   db.prepare('UPDATE plan SET workout_id = NULL WHERE workout_id = ?').run(req.params.id);
+  // Cascade: schedule rows referencing this workout are DELETED (never nulled —
+  // a NULL schedule row means an explicit Rest-marker, which must not be
+  // auto-created). A date left with zero rows reverts to template fallback;
+  // any other rows on the date are untouched (specs/schedule.md §7).
+  db.prepare('DELETE FROM schedule WHERE workout_id = ?').run(req.params.id);
   res.json({ deleted: true, id: req.params.id });
 });
 
@@ -421,6 +436,94 @@ app.put('/api/plan/:day', (req, res) => {
     .prepare('SELECT plan.day as day, workouts.* FROM plan LEFT JOIN workouts ON workouts.id = plan.workout_id WHERE plan.day = ?')
     .get(day);
   res.json({ day, workout: row && row.id ? rowToWorkout(row) : null });
+});
+
+// ---------------------------------------------------------------------------
+// Schedule (specs/schedule.md — date-specific overrides layered over `plan`)
+// ---------------------------------------------------------------------------
+
+// Sane cap on a date-range read (a padded month is ~42 days; 62 gives headroom).
+const MAX_SCHEDULE_RANGE_DAYS = 62;
+
+app.get('/api/schedule', (req, res) => {
+  const { from, to } = req.query;
+  if (!isValidDateStr(from) || !isValidDateStr(to)) {
+    return sendError(res, 400, 'from and to are required, valid YYYY-MM-DD dates');
+  }
+  if (to < from) {
+    return sendError(res, 400, 'to must not be before from');
+  }
+  const fromDate = toDateOnlyUTC(from);
+  const toDate = toDateOnlyUTC(to);
+  const spanDays = Math.round((toDate.getTime() - fromDate.getTime()) / 86400000) + 1;
+  if (spanDays > MAX_SCHEDULE_RANGE_DAYS) {
+    return sendError(res, 400, `range too large — max ${MAX_SCHEDULE_RANGE_DAYS} days`);
+  }
+
+  const todayStr = resolveTodayStr(req, res);
+  if (todayStr === null) return; // error already sent
+
+  const ctx = buildResolutionCtx(db);
+  const sessionDatesSet = getSessionDatesSet(db);
+
+  const schedule = [];
+  for (let i = 0; i < spanDays; i++) {
+    const dStr = formatDateOnly(addDaysUTC(fromDate, i));
+    schedule.push(computeScheduleEntry(dStr, todayStr, ctx, sessionDatesSet));
+  }
+  res.json({ schedule });
+});
+
+// Set-the-whole-day mutation. Body is exactly one of:
+//   { workout_ids: string[] } — replace the date's entries (order preserved);
+//     an empty array behaves like { clear: true } (zero rows -> unset).
+//   { rest: true }            — explicit Rest-marker (single NULL row)
+//   { clear: true }           — delete the date's override -> template fallback
+app.put('/api/schedule/:date', (req, res) => {
+  const { date } = req.params;
+  if (!isValidDateStr(date)) return sendError(res, 400, 'date must be a valid YYYY-MM-DD date');
+
+  // Validate ?today BEFORE any mutation so a malformed value never writes then 400s.
+  const todayStr = resolveTodayStr(req, res);
+  if (todayStr === null) return;
+
+  const body = req.body || {};
+  const ts = nowIso();
+
+  if (body.clear === true) {
+    db.prepare('DELETE FROM schedule WHERE date = ?').run(date);
+  } else if (body.rest === true) {
+    const setRest = db.transaction(() => {
+      db.prepare('DELETE FROM schedule WHERE date = ?').run(date);
+      db.prepare(
+        'INSERT INTO schedule (id, date, workout_id, sort_order, created_at) VALUES (?, ?, NULL, 0, ?)'
+      ).run(newId(), date, ts);
+    });
+    setRest();
+  } else if (Array.isArray(body.workout_ids)) {
+    const ids = body.workout_ids.map((v) => String(v));
+    // Validate every id up front so a bad id 404s without mutating anything
+    // (consistent with PUT /api/plan/:day 404ing on an unknown workout_id).
+    for (const wid of ids) {
+      const workout = db.prepare('SELECT id FROM workouts WHERE id = ?').get(wid);
+      if (!workout) return notFound(res, 'Workout');
+    }
+    const setWorkouts = db.transaction(() => {
+      db.prepare('DELETE FROM schedule WHERE date = ?').run(date);
+      ids.forEach((wid, idx) => {
+        db.prepare(
+          'INSERT INTO schedule (id, date, workout_id, sort_order, created_at) VALUES (?, ?, ?, ?, ?)'
+        ).run(newId(), date, wid, idx, ts);
+      });
+    });
+    setWorkouts();
+  } else {
+    return sendError(res, 400, 'body must be one of { workout_ids: string[] }, { rest: true }, { clear: true }');
+  }
+
+  const ctx = buildResolutionCtx(db);
+  const sessionDatesSet = getSessionDatesSet(db);
+  res.json(computeScheduleEntry(date, todayStr, ctx, sessionDatesSet));
 });
 
 // ---------------------------------------------------------------------------

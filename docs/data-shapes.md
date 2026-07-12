@@ -79,6 +79,35 @@ by `migrate()` on first boot.
 | `day` | TEXT PK | one of `mon,tue,wed,thu,fri,sat,sun` |
 | `workout_id` | TEXT, nullable | `NULL` = Rest day. No enforced FK — deleting a workout nulls every plan row pointing at it (handled explicitly in the `DELETE /api/workouts/:id` route, not via SQLite FK cascade) |
 
+### `schedule`
+
+Date-keyed overrides layered over the `plan` weekly template (specs/schedule.md, decision #21).
+An empty table means every date is **unset** and falls back to `plan[weekday]` — the app behaves
+exactly as before this feature until the user schedules a specific date. No seed rows.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | TEXT PK | `crypto.randomUUID()` |
+| `date` | TEXT | local calendar date `YYYY-MM-DD` (device-local, decision #12 — no timezone conversion) |
+| `workout_id` | TEXT, nullable | a workout planned on that date; **`NULL` = the date's explicit Rest-marker**. No enforced FK — a dangling `workout_id` (its workout was deleted) is defensively skipped on read; in practice `DELETE /api/workouts/:id` deletes the referencing rows outright (see cascade below), so a dangling row should only ever be transient |
+| `sort_order` | INTEGER | stable order of multiple workouts on one date, ascending; ties broken by `created_at`/row order |
+| `created_at` | TEXT | ISO datetime |
+
+**Set vs unset vs Rest (normative, mirrors `plannedWorkoutsForDate` below):**
+- A date is **"set"** iff it has **≥ 1** row in `schedule`.
+- **Explicit Rest** = a date that is set with exactly **one** row whose `workout_id` is `NULL`.
+  Overrides the template with *nothing* (no planned workout that date).
+- **Unset** = a date with **zero** rows → falls back to the weekly `plan` template for that weekday.
+- Duplicate workouts on one date are allowed (two rows, same `workout_id`) — N-of-M treats them as
+  two distinct planned entries (see below).
+
+**Index**: `schedule(date)` (all reads are by date/date-range).
+
+**Workout deletion cascade** (delta to `DELETE /api/workouts/:id`): rows in `schedule` referencing
+the deleted `workout_id` are **deleted**, never nulled — a NULL row means explicit Rest, which must
+not be silently created. If that leaves a date with zero rows, it reverts to template fallback; any
+other rows on the date are left alone.
+
 ### `sessions`
 
 A **completed** tracked workout only (decision #5 — in-progress/abandoned sessions live in
@@ -101,7 +130,7 @@ session survives the deletion of its source workout — see snapshot fields belo
 | `created_at` | TEXT | ISO datetime, server-set |
 
 **Indexes**: `exercises(name)`, `exercises(category)`, `workouts(category)`, `workouts(favorite)`,
-`sessions(date)`, `sessions(workout_id)`, `gyms(favorite)`.
+`sessions(date)`, `sessions(workout_id)`, `gyms(favorite)`, `schedule(date)`.
 
 **Idempotent boot migration**: on every boot, `server/db.js` reads `PRAGMA table_info` for each
 table and `ALTER TABLE ... ADD COLUMN`s anything missing, so an existing DB upgrades in place
@@ -222,6 +251,43 @@ that produce them.
 { "day": "mon", "workout": { /* Workout shape, or null for Rest */ } }
 ```
 
+### Resolution rule — `plannedWorkoutsForDate(date)` (specs/schedule.md §4)
+
+The single function `GET /api/week`, `GET /api/stats`, and `GET/PUT /api/schedule` use to
+determine a calendar date's planned workouts (server/lib/week.js). Replaces every prior
+"read `plan[weekday]`" lookup:
+
+```
+plannedWorkoutsForDate(date):
+  rows = schedule rows where schedule.date == date
+  if rows is non-empty (date is "set"):
+     if the only row is a Rest-marker (workout_id == NULL): return []   // explicit Rest
+     return [ workout for each row with non-NULL workout_id, ordered by
+              sort_order, resolved via workouts table, skipping any
+              workout_id that no longer exists ]                        // 0..n
+  else (unset):
+     w = plan[weekday(date)].workout_id
+     return w ? [resolve(w)] : []                                       // 0 or 1
+```
+
+An empty result means Rest for that date regardless of whether it came from an explicit Rest
+override or an unset weekday with no template workout. `weekday(date)` and all date math are
+device-local (decision #12).
+
+### Schedule entry (`GET`/`PUT /api/schedule` — resolved shape)
+
+```jsonc
+{
+  "date": "2026-07-16",
+  "source": "schedule" | "template" | "rest",  // "schedule" = date-set override with workouts,
+                                                 // "rest" = explicit Rest override (set, NULL marker),
+                                                 // "template" = unset -> fell back to the weekly plan
+  "is_set": true,                               // date has >=1 row in `schedule` (an override exists)
+  "workouts": [ { /* Workout */ } ],             // resolved via plannedWorkoutsForDate; [] = Rest
+  "status": "planned"                            // done | rest | missed | planned (completion overlay)
+}
+```
+
 ### Session
 
 ```jsonc
@@ -251,6 +317,10 @@ that produce them.
 
 ### Week payload (`GET /api/week`)
 
+Each day's plan is now resolved via `plannedWorkoutsForDate` (above), so a day can have **0, 1, or
+several** planned workouts — the per-day `workout` (single) field from before this feature is
+**replaced by `workouts` (array, possibly empty)** (decision #21 / specs/schedule.md §5.4):
+
 ```jsonc
 {
   "today_date": "2026-07-08",
@@ -258,13 +328,17 @@ that produce them.
   "m": 5,
   "streak": 6,
   "days": [
-    { "day": "mon", "date": "2026-07-06", "status": "done", "is_today": false, "workout": { /* Workout | null */ } }
-    // ... tue..sun
+    { "day": "mon", "date": "2026-07-06", "status": "done", "is_today": false, "workouts": [ { /* Workout */ } ] }
+    // ... tue..sun — "workouts" may be [], [one workout], or several
   ],
-  "today": { /* the one entry from `days` where is_today === true */ }
+  "today": { /* the one entry from `days` where is_today === true, same shape, "workouts" plural */ }
 }
 ```
-`status` is one of `done | rest | missed | planned` (see `docs/api.md` for the normative rules).
+`status` is one of `done | rest | missed | planned` and is still computed at the **day level**
+(decision #4 preserved — see `docs/api.md` for the normative rules). `n`/`m` are now computed at
+the **workout level** per specs/schedule.md §5.2 (see `docs/api.md`) — with multiple workouts per
+day, `m` sums every planned entry across the week and `n` sums each day's satisfied-entry count
+plus at most one off-plan credit per day.
 
 ### Stats payload (`GET /api/stats`)
 

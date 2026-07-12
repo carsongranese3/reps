@@ -1,7 +1,7 @@
-// This Week / streak / N-of-M computation — normative rules in specs/reps.md §2.1
-// and decision #4. A single set of helpers here is reused by both GET /api/week
-// and GET /api/stats so the streak value is guaranteed identical everywhere
-// (per the spec's "must be identical wherever returned" requirement).
+// This Week / streak / N-of-M computation — normative rules in specs/reps.md §2.1,
+// redefined by specs/schedule.md §4-§5 (decision #21). A single set of helpers here
+// is reused by GET /api/week, GET /api/stats, and GET/PUT /api/schedule so the
+// streak/resolution values are guaranteed identical everywhere.
 //
 // Calendar dates are handled as plain 'YYYY-MM-DD' strings and manipulated via
 // UTC-based Date objects purely as a date-only calculator (no timezone
@@ -75,6 +75,53 @@ export function getPlanMap(db) {
   return map;
 }
 
+// id -> raw workout row, for resolving schedule.workout_id references.
+export function getWorkoutsById(db) {
+  const rows = db.prepare('SELECT * FROM workouts').all();
+  const map = new Map();
+  for (const r of rows) map.set(r.id, r);
+  return map;
+}
+
+// date -> ordered array of raw schedule rows for that date (sort_order asc,
+// created_at/rowid as a stable tiebreak). Loads the whole table once — this is
+// a single-user personal app, so the schedule table stays small.
+export function getScheduleMap(db) {
+  const rows = db
+    .prepare('SELECT * FROM schedule ORDER BY date ASC, sort_order ASC, created_at ASC, rowid ASC')
+    .all();
+  const map = new Map();
+  for (const r of rows) {
+    if (!map.has(r.date)) map.set(r.date, []);
+    map.get(r.date).push(r);
+  }
+  return map;
+}
+
+// Bundles the three maps the resolution rule needs so callers only query once
+// per request even when resolving many dates (a week, a month calendar, or the
+// streak's day-by-day walk-back).
+export function buildResolutionCtx(db) {
+  return {
+    planMap: getPlanMap(db),
+    scheduleMap: getScheduleMap(db),
+    workoutsById: getWorkoutsById(db),
+  };
+}
+
+// date -> array of workout_ids of that date's COMPLETED sessions (one entry per
+// session, duplicates kept — needed for the k/j matching in computeDayNM).
+export function getSessionsByDate(db) {
+  const rows = db.prepare('SELECT date, workout_id FROM sessions').all();
+  const map = new Map();
+  for (const r of rows) {
+    const d = String(r.date).slice(0, 10);
+    if (!map.has(d)) map.set(d, []);
+    map.get(d).push(r.workout_id ?? null);
+  }
+  return map;
+}
+
 export function getSessionDatesSet(db) {
   const rows = db.prepare('SELECT date FROM sessions').all();
   const set = new Set();
@@ -82,26 +129,67 @@ export function getSessionDatesSet(db) {
   return set;
 }
 
-// Normative day status per spec §2.1 + decision #4: a completed session on ANY
-// calendar day (including an off-plan/nominal-Rest day) marks that day Done —
-// Done is evaluated before falling back to Rest. Only planned, non-rest, undone
-// days can be Missed/Planned.
-export function dayStatus(dateStr, todayStr, planMap, sessionDatesSet) {
-  const isDone = sessionDatesSet.has(dateStr);
-  if (isDone) return 'done';
+// ---------------------------------------------------------------------------
+// Resolution rule (specs/schedule.md §4) — the single source of truth for what
+// a calendar date's planned workouts are. Every prior "read plan[weekday]"
+// lookup is replaced by this.
+//
+//   rows = schedule rows where schedule.date == date
+//   if rows is non-empty (date is "set"):
+//      if the only row is a Rest-marker (workout_id == NULL): []  (explicit Rest)
+//      else: [workout for each row with non-NULL workout_id, ordered by
+//             sort_order, resolved via workouts table, skipping dangling ids]
+//   else (unset): fall back to plan[weekday(date)] -> 0 or 1 workout
+// ---------------------------------------------------------------------------
+
+// Returns { source: 'schedule'|'rest'|'template', is_set: boolean, workoutRows: rawWorkoutRow[] }.
+export function resolveScheduleForDate(dateStr, ctx) {
+  const { planMap, scheduleMap, workoutsById } = ctx;
+  const rows = scheduleMap.get(dateStr);
+
+  if (rows && rows.length > 0) {
+    const isRestMarker = rows.length === 1 && rows[0].workout_id == null;
+    if (isRestMarker) {
+      return { source: 'rest', is_set: true, workoutRows: [] };
+    }
+    const workoutRows = rows
+      .filter((r) => r.workout_id != null)
+      .map((r) => workoutsById.get(r.workout_id))
+      .filter(Boolean); // dangling workout_id (deleted workout) -> skipped, §7
+    return { source: 'schedule', is_set: true, workoutRows };
+  }
+
   const wd = weekdayKeyOf(toDateOnlyUTC(dateStr));
   const planned = planMap[wd];
-  if (!planned) return 'rest';
+  return { source: 'template', is_set: false, workoutRows: planned ? [planned] : [] };
+}
+
+// Convenience: just the ordered list of raw workout rows planned for a date
+// (0..n). This is `plannedWorkoutsForDate` from the spec.
+export function plannedWorkoutsForDate(dateStr, ctx) {
+  return resolveScheduleForDate(dateStr, ctx).workoutRows;
+}
+
+// Normative day status (spec §5.1 / decision #4): a completed session on ANY
+// calendar day (including an off-plan/nominal-Rest day) marks that day Done —
+// Done is evaluated before falling back to Rest. Only planned, non-rest, undone
+// days can be Missed/Planned. Now resolved via plannedWorkoutsForDate instead of
+// a raw plan[weekday] lookup.
+export function dayStatus(dateStr, todayStr, sessionDatesSet, ctx) {
+  const isDone = sessionDatesSet.has(dateStr);
+  if (isDone) return 'done';
+  const planned = plannedWorkoutsForDate(dateStr, ctx);
+  if (planned.length === 0) return 'rest';
   if (dateStr < todayStr) return 'missed';
   return 'planned';
 }
 
-export function computeStreak(planMap, sessionDatesSet, todayStr) {
+export function computeStreak(ctx, sessionDatesSet, todayStr) {
   let streak = 0;
   let cursor = toDateOnlyUTC(todayStr);
   for (let i = 0; i < STREAK_LOOKBACK_DAYS; i++) {
     const dStr = formatDateOnly(cursor);
-    const status = dayStatus(dStr, todayStr, planMap, sessionDatesSet);
+    const status = dayStatus(dStr, todayStr, sessionDatesSet, ctx);
     if (dStr === todayStr && status === 'planned') {
       // Today is planned-but-not-yet-done: doesn't break the streak until it
       // becomes Missed at the next local midnight. Skip it and keep walking.
@@ -116,9 +204,62 @@ export function computeStreak(planMap, sessionDatesSet, todayStr) {
   return streak;
 }
 
+// N-of-M at the workout level (spec §5.2). `plannedWorkouts` is the resolved
+// Workout[] for the date (rowToWorkout'd); `sessionWorkoutIds` is that date's
+// completed sessions' workout_ids (one entry per session, nulls kept).
+//
+//   m = |plannedWorkouts|
+//   satisfiedCount = Σ over distinct planned workout ids of min(k, j)
+//     where k = times that workout is planned that date, j = completed
+//     sessions of that workout that date
+//   offPlanCredit = 1 iff some completed session's workout_id doesn't match
+//     ANY planned workout that date at all (i.e. genuinely unrelated to the
+//     day's plan) — NOT triggered by extra/duplicate completions of a workout
+//     that IS already planned (those just can't push satisfiedCount past k).
+export function computeDayNM(plannedWorkouts, sessionWorkoutIds) {
+  const m = plannedWorkouts.length;
+
+  const plannedCounts = new Map();
+  for (const w of plannedWorkouts) {
+    plannedCounts.set(w.id, (plannedCounts.get(w.id) || 0) + 1);
+  }
+
+  const sessionCounts = new Map();
+  for (const wid of sessionWorkoutIds) {
+    const key = wid ?? '__null__';
+    sessionCounts.set(key, (sessionCounts.get(key) || 0) + 1);
+  }
+
+  let satisfied = 0;
+  for (const [wid, k] of plannedCounts) {
+    const j = sessionCounts.get(wid) || 0;
+    satisfied += Math.min(k, j);
+  }
+
+  let offPlanCredit = 0;
+  for (const wid of sessionCounts.keys()) {
+    if (!plannedCounts.has(wid)) {
+      offPlanCredit = 1;
+      break;
+    }
+  }
+
+  return { m, n: satisfied + offPlanCredit };
+}
+
+// The resolved schedule entry for one date — shared by GET/PUT /api/schedule.
+// { date, source, is_set, workouts, status }
+export function computeScheduleEntry(dateStr, todayStr, ctx, sessionDatesSet) {
+  const { source, is_set, workoutRows } = resolveScheduleForDate(dateStr, ctx);
+  const workouts = workoutRows.map(rowToWorkout);
+  const status = dayStatus(dateStr, todayStr, sessionDatesSet, ctx);
+  return { date: dateStr, source, is_set, workouts, status };
+}
+
 export function computeWeekPayload(db, todayStr) {
-  const planMap = getPlanMap(db);
-  const sessionDatesSet = getSessionDatesSet(db);
+  const ctx = buildResolutionCtx(db);
+  const sessionsByDate = getSessionsByDate(db);
+  const sessionDatesSet = new Set(sessionsByDate.keys());
   const monday = mondayOfWeek(todayStr);
 
   const days = [];
@@ -128,24 +269,26 @@ export function computeWeekPayload(db, todayStr) {
     const date = addDaysUTC(monday, i);
     const dStr = formatDateOnly(date);
     const wd = WEEKDAY_ORDER[i];
-    const planned = planMap[wd];
-    const status = dayStatus(dStr, todayStr, planMap, sessionDatesSet);
+    const plannedRows = plannedWorkoutsForDate(dStr, ctx);
+    const workouts = plannedRows.map(rowToWorkout);
+    const status = dayStatus(dStr, todayStr, sessionDatesSet, ctx);
     const isToday = dStr === todayStr;
-    // M = planned, non-rest days in the week (regardless of done/missed).
-    if (planned) m++;
-    // N = days in the week that are Done — decision #4: an off-plan completed
-    // session still counts toward N even though it never adds to M.
-    if (status === 'done') n++;
+
+    const sessionWorkoutIds = sessionsByDate.get(dStr) || [];
+    const dayNM = computeDayNM(workouts, sessionWorkoutIds);
+    m += dayNM.m;
+    n += dayNM.n;
+
     days.push({
       day: wd,
       date: dStr,
       status,
       is_today: isToday,
-      workout: planned ? rowToWorkout(planned) : null,
+      workouts,
     });
   }
 
-  const streak = computeStreak(planMap, sessionDatesSet, todayStr);
+  const streak = computeStreak(ctx, sessionDatesSet, todayStr);
   const today = days.find((d) => d.is_today) || null;
 
   return { today_date: todayStr, n, m, streak, days, today };

@@ -2,12 +2,12 @@
 // streak helper as week.js so the value is identical wherever it's shown.
 
 import { rowToSession } from './serialize.js';
-import { computeStreak, getPlanMap, getSessionDatesSet, mondayOfWeek, addDaysUTC, formatDateOnly } from './week.js';
+import { computeStreak, buildResolutionCtx, getSessionDatesSet, mondayOfWeek, addDaysUTC, formatDateOnly } from './week.js';
 
 export function computeStats(db, todayStr) {
-  const planMap = getPlanMap(db);
+  const ctx = buildResolutionCtx(db);
   const sessionDatesSet = getSessionDatesSet(db);
-  const streak = computeStreak(planMap, sessionDatesSet, todayStr);
+  const streak = computeStreak(ctx, sessionDatesSet, todayStr);
 
   const sessions = db.prepare('SELECT * FROM sessions').all().map(rowToSession);
   const monthPrefix = todayStr.slice(0, 7); // YYYY-MM

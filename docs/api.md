@@ -6,8 +6,8 @@ calls `fetch` ad hoc or touches SQL. Base URL in dev: `http://localhost:4000` (E
 (the server reflects the request origin — single-user, no-auth app). In production the same
 Express server also serves the built client from `client/dist`.
 
-All entity shapes referenced below (Exercise, Workout, Gym, Plan entry, Session, Week payload,
-Stats payload) are fully specified in `docs/data-shapes.md` — this document is the
+All entity shapes referenced below (Exercise, Workout, Gym, Plan entry, Schedule entry, Session,
+Week payload, Stats payload) are fully specified in `docs/data-shapes.md` — this document is the
 routes/params/status codes; that document is the JSON shapes.
 
 ## Conventions
@@ -195,10 +195,14 @@ Response: `200` → `Workout` (same `id`, never a duplicate) · `400` validation
 `404` if not found.
 
 ### `DELETE /api/workouts/:id`
-Deletes the workout. **Cascades**: any `plan` day pointing at this workout is set to Rest
-(`workout_id = NULL`). Past `sessions` referencing this workout are left untouched — they keep
-their `workout_title`/`workout_category` snapshot and render as historical/orphaned (see
-`docs/data-shapes.md`).
+Deletes the workout. **Cascades**:
+- Any `plan` day pointing at this workout is set to Rest (`workout_id = NULL`).
+- Any `schedule` rows pointing at this workout are **deleted** (never nulled — a NULL `schedule`
+  row means an explicit Rest-marker, which must not be auto-created). A date left with zero rows
+  reverts to template fallback; other rows on the same date are untouched (specs/schedule.md §7).
+- Past `sessions` referencing this workout are left untouched — they keep their
+  `workout_title`/`workout_category` snapshot and render as historical/orphaned (see
+  `docs/data-shapes.md`).
 
 Response: `200` → `{ "deleted": true, "id": "..." }` · `404` if not found.
 
@@ -272,6 +276,69 @@ Response: `200` → `{ "day": "mon", "workout": { /* Workout */ } | null }` · `
 
 ---
 
+## Schedule (specs/schedule.md, decision #21 — date-specific overrides over the weekly `plan`)
+
+A `schedule` row plans a workout on a **specific calendar date**, layered as an override on top of
+the fixed weekly `plan` template: an unset date falls back to `plan[weekday]`; a set date uses its
+own entries instead. Multiple workouts per date are allowed. See `docs/data-shapes.md` for the
+`schedule` table and the normative `plannedWorkoutsForDate` resolution rule. All dates are local
+`YYYY-MM-DD` (decision #12); mutations are immediate (no draft/save step).
+
+### `GET /api/schedule?from=YYYY-MM-DD&to=YYYY-MM-DD`
+Reads the **resolved** schedule for a date range (the calendar screen requests the visible month,
+typically padded to whole weeks).
+
+Query params:
+| Param | Type | Effect |
+|---|---|---|
+| `from`, `to` | `YYYY-MM-DD`, required | inclusive date range; `to` must not be before `from` |
+| `today` | `YYYY-MM-DD`, optional | same contract as `GET /api/week` — drives the `status` overlay; falls back to server-local if omitted |
+
+Response: `200` →
+```jsonc
+{
+  "schedule": [
+    {
+      "date": "2026-07-16",
+      "source": "schedule" | "template" | "rest",
+      "is_set": true,
+      "workouts": [ { /* Workout */ } ],
+      "status": "planned"   // done | rest | missed | planned — same rule as GET /api/week's per-day status
+    }
+    // ... one entry per date in [from, to]
+  ]
+}
+```
+`400` if `from`/`to` are missing, not valid `YYYY-MM-DD`, `to < from`, or the range exceeds the cap
+(**62 days** — a padded month with headroom).
+
+### `PUT /api/schedule/:date`
+Mutates a single date's schedule. `:date` must be a valid `YYYY-MM-DD`. Body is exactly **one** of:
+```jsonc
+{ "workout_ids": ["id1", "id2"] }   // replace the date's entries with these workouts, order
+                                     // preserved, duplicates allowed (not deduped) -> date "set".
+                                     // An empty array ([]) behaves like { "clear": true }.
+{ "rest": true }                     // explicit Rest override: a single NULL marker row; clears
+                                      // any workouts previously on the date.
+{ "clear": true }                    // delete the date's override entirely -> reverts to the
+                                      // weekly template (date becomes "unset").
+```
+Precedence when a body has more than one key: `clear` > `rest` > `workout_ids`. Adding workouts
+(`workout_ids`) always replaces the whole day in one call — there is no separate append endpoint;
+the client resends the full desired list (add = read current `workouts`, append the new id, PUT
+the full list; remove = PUT the list without that entry — removing the last entry naturally
+reverts to template, matching specs/schedule.md §2.2).
+
+Query params: `today` (optional, same contract as `GET /api/week`) — used only to compute the
+returned `status`.
+
+Response: `200` → the resolved entry for that date (same shape as a `GET /api/schedule` element) ·
+`400` invalid `:date` or a body matching none of the three forms · `404` if any `workout_id` in
+`workout_ids` doesn't reference an existing workout (validated up front — nothing is mutated if any
+id is invalid, consistent with `PUT /api/plan/:day`'s 404 on an unknown `workout_id`).
+
+---
+
 ## Sessions (completed workouts only)
 
 Per decision #5, only **completed** sessions are ever written to the server; in-progress/paused
@@ -340,8 +407,9 @@ Both endpoints below share one streak/day-status helper (`server/lib/week.js`), 
 value is guaranteed identical wherever it's shown, per the spec's normative requirement.
 
 ### `GET /api/week`
-The This Week payload: the fixed plan resolved against the calendar week containing `today`, each
-day's status, N-of-M, and streak.
+The This Week payload: each day of the current calendar week resolved via `plannedWorkoutsForDate`
+(specs/schedule.md §4 — schedule override, else the fixed `plan` template), each day's status,
+N-of-M, and streak.
 
 Query params: `today` (optional) — an ISO date string `YYYY-MM-DD` representing the **client's
 local calendar date**. Because "today"/week boundaries are defined in device-local time (spec
@@ -353,27 +421,49 @@ correctness across timezones).
 Response: `200` → Week payload (see `docs/data-shapes.md` for the exact shape: `today_date`, `n`,
 `m`, `streak`, `days[]`, `today`) · `400` if `today` is present but not a valid `YYYY-MM-DD` date.
 
-Normative day `status` values — `done | rest | missed | planned`:
+**Per-day shape change (decision #21):** because a date can now have multiple planned workouts
+(via a `schedule` override), each `days[]` entry's `workout` (single, nullable) is **replaced by
+`workouts` (array, possibly empty)** — `[]` means Rest that day. `today.workouts` likewise.
+
+Normative day `status` values — `done | rest | missed | planned` — still computed at the **day
+level** (decision #4 preserved, unaffected by multiple-per-day):
 - **done**: a completed session exists on that calendar date (checked first — this is true even
   for an off-plan/non-planned day, per decision #4).
-- **rest**: no `done` session, and the day has no planned workout in `plan` (or its planned
-  workout was deleted).
-- **missed**: no `done` session, the day has a planned non-rest workout, and the date is strictly
+- **rest**: no `done` session, and `plannedWorkoutsForDate` resolves to `[]` for that date (an
+  explicit Rest override, or an unset weekday with no template workout).
+- **missed**: no `done` session, `plannedWorkoutsForDate` is non-empty, and the date is strictly
   before `today`.
-- **planned**: no `done` session, the day has a planned non-rest workout, and the date is `today`
+- **planned**: no `done` session, `plannedWorkoutsForDate` is non-empty, and the date is `today`
   or in the future.
 
-`m` = count of the week's 7 days with a planned non-rest workout (regardless of status). `n` =
-count of the week's 7 days with `status: "done"` — this can include off-plan Done days that don't
-count toward `m` (decision #4), so `n` is not strictly "a subset of `m`".
+**N-of-M is now computed at the workout level** (specs/schedule.md §5.2, decision #21), to handle
+multiple planned workouts per day:
+- `m` = **Σ over the week's 7 days of `|plannedWorkoutsForDate(date)|`** — a day with 2 planned
+  workouts contributes 2, not 1.
+- For a date, `satisfiedCount` = the number of that date's planned entries matched by a completed
+  session of the same `workout_id` that date (if a workout is planned *k* times and there are *j*
+  completed sessions of it, `min(k, j)` entries are satisfied).
+- `offPlanCredit` for a date = **1** if any completed session that date has a `workout_id` that
+  doesn't correspond to **any** planned entry for that date at all (genuinely unrelated to the
+  day's plan) — **not** triggered merely by extra/duplicate completions of a workout that *is*
+  already planned (those can't push `satisfiedCount` past its planned count `k`), else **0**.
+- `n` = **Σ over the week's days of `(satisfiedCount(date) + offPlanCredit(date))`**.
+- As before, `n` is **not strictly ≤ m** — off-plan credit can exceed satisfied planned work.
+- Single-workout-per-day days behave exactly as before this feature (decision #4/#13 preserved):
+  a planned day you complete → "1 of 1"; a planned day you skip → 0 of 1; a planned day you do
+  something else on → still "1 of 1" via `offPlanCredit`; a rest day you train on → off-plan
+  credit toward `n` but not `m`.
 
-`streak` = consecutive days walking backward from `today`: `done` days increment it, `rest` days
-pass through without incrementing or breaking it, a `missed` day breaks it, and `today` itself is
-skipped entirely (neither counted nor breaking) when its status is `planned` (not yet done, day
-not over).
+`streak` = consecutive days walking backward from `today`, using the same day-level `status` above
+(unaffected by multiple-per-day): `done` days increment it, `rest` days pass through without
+incrementing or breaking it, a `missed` day breaks it, and `today` itself is skipped entirely
+(neither counted nor breaking) when its status is `planned` (not yet done, day not over).
 
 ### `GET /api/stats`
-History summary tiles + the weekly-volume chart.
+History summary tiles + the weekly-volume chart. `current_streak` is computed via the same
+resolution rule and shared helper as `GET /api/week` (`plannedWorkoutsForDate` + `computeStreak`),
+so it reflects `schedule` overrides identically and is guaranteed to match `GET /api/week`'s
+`streak` exactly.
 
 Query params: `today` (optional, same contract as `GET /api/week`).
 

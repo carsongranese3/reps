@@ -153,6 +153,29 @@ const TABLES = {
       created_at: 'TEXT',
     },
   },
+  schedule: {
+    // Date-keyed overrides layered over the `plan` weekly template (schedule.md).
+    // A date is "set" iff it has >=1 row here; a single row with workout_id NULL
+    // is the date's explicit Rest-marker; zero rows = unset -> falls back to
+    // `plan[weekday]`. No enforced FK on workout_id — a dangling reference is
+    // tolerated on read (skipped by the resolution rule), mirroring `plan`.
+    ddl: `
+      CREATE TABLE IF NOT EXISTS schedule (
+        id         TEXT PRIMARY KEY,
+        date       TEXT NOT NULL,
+        workout_id TEXT,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL
+      )
+    `,
+    columns: {
+      id: 'TEXT',
+      date: 'TEXT',
+      workout_id: 'TEXT',
+      sort_order: 'INTEGER NOT NULL DEFAULT 0',
+      created_at: 'TEXT',
+    },
+  },
   gyms: {
     // A reference library of places + their equipment (decision #17). Storage/
     // display only for now — no relation to workouts/exercises.
@@ -204,6 +227,7 @@ export function migrate() {
     CREATE INDEX IF NOT EXISTS idx_sessions_date ON sessions(date);
     CREATE INDEX IF NOT EXISTS idx_sessions_workout_id ON sessions(workout_id);
     CREATE INDEX IF NOT EXISTS idx_gyms_favorite ON gyms(favorite);
+    CREATE INDEX IF NOT EXISTS idx_schedule_date ON schedule(date);
   `);
 
   // Seed the fixed Mon..Sun plan rows if they don't exist yet (day is the PK).

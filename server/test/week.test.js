@@ -109,8 +109,88 @@ describe('GET /api/week — deleted-workout plan reference degrades to Rest', ()
     const res = await request(ctx.app).get('/api/week?today=2026-07-10');
     const byDay = Object.fromEntries(res.body.days.map((d) => [d.day, d]));
     expect(byDay.wed.status).toBe('rest');
-    expect(byDay.wed.workout).toBeNull();
+    expect(byDay.wed.workouts).toEqual([]);
     expect(res.body.m).toBe(2); // mon + thu only now
+  });
+});
+
+describe('GET /api/week — schedule override drives the week payload (specs/schedule.md §4-§5)', () => {
+  // Uses an unrelated future week so it doesn't interact with the state built
+  // up by the describes above (a session logged on this week's Monday, etc.).
+  const monday = '2026-08-03'; // Mon
+  const tuesday = '2026-08-04'; // Tue
+
+  it('a date with multiple override workouts shows workouts[] with both entries', async () => {
+    const put = await request(ctx.app).put(`/api/schedule/${monday}`).send({ workout_ids: [wMon, wThu] });
+    expect(put.status).toBe(200);
+    expect(put.body.source).toBe('schedule');
+    expect(put.body.workouts.map((w) => w.id)).toEqual([wMon, wThu]);
+
+    const res = await request(ctx.app).get(`/api/week?today=${monday}`);
+    const byDate = Object.fromEntries(res.body.days.map((d) => [d.date, d]));
+    expect(byDate[monday].workouts.map((w) => w.id)).toEqual([wMon, wThu]);
+    // M for the week includes both of this date's planned entries.
+    expect(res.body.m).toBeGreaterThanOrEqual(2);
+  });
+
+  it('an explicit Rest override on a date makes it empty even if the template would plan something', async () => {
+    const rest = await request(ctx.app).put(`/api/schedule/${tuesday}`).send({ rest: true });
+    expect(rest.status).toBe(200);
+    expect(rest.body.source).toBe('rest');
+    expect(rest.body.workouts).toEqual([]);
+
+    const res = await request(ctx.app).get(`/api/week?today=${monday}`);
+    const byDate = Object.fromEntries(res.body.days.map((d) => [d.date, d]));
+    expect(byDate[tuesday].workouts).toEqual([]);
+    expect(byDate[tuesday].status).toBe('rest');
+  });
+
+  it('completing one of two planned workouts on a date marks the day Done (partial completion is an N-of-M detail, not a day-status one)', async () => {
+    await session(wMon, `${monday}T09:00:00.000Z`);
+    const res = await request(ctx.app).get(`/api/week?today=${monday}`);
+    const byDate = Object.fromEntries(res.body.days.map((d) => [d.date, d]));
+    expect(byDate[monday].status).toBe('done');
+    expect(byDate[monday].workouts.map((w) => w.id)).toEqual([wMon, wThu]);
+  });
+
+  it('an unrelated off-plan workout on a planned date still credits N once without inflating past M (§5.2 tradeoff)', async () => {
+    // A date with 2 planned workouts; complete 1 planned + 1 genuinely unrelated
+    // one. Verify via the resolved workouts + the N total not jumping by more
+    // than the tradeoff allows (satisfiedCount=1 + offPlanCredit=1, not more).
+    const day = '2026-08-17';
+    const wOffPlan = await makeWorkout('Unrelated Off-Plan Workout');
+    await request(ctx.app).put(`/api/schedule/${day}`).send({ workout_ids: [wMon, wThu] });
+
+    const before = await request(ctx.app).get(`/api/week?today=${day}`);
+
+    await session(wMon, `${day}T09:00:00.000Z`); // satisfies one of the two planned entries
+    await session(wOffPlan, `${day}T18:00:00.000Z`); // unrelated to anything planned that day
+
+    const after = await request(ctx.app).get(`/api/week?today=${day}`);
+    const byDate = Object.fromEntries(after.body.days.map((d) => [d.date, d]));
+    expect(byDate[day].status).toBe('done');
+    expect(byDate[day].workouts.map((w) => w.id)).toEqual([wMon, wThu]);
+    // satisfiedCount(1) + offPlanCredit(1) = 2 contributed by this single day.
+    expect(after.body.n).toBe(before.body.n + 2);
+  });
+
+  it('duplicate planned entries of the same workout only satisfy up to the planned count (min(k,j))', async () => {
+    const day = '2026-08-24';
+    const baseline = await request(ctx.app).get(`/api/week?today=${day}`);
+
+    const put = await request(ctx.app).put(`/api/schedule/${day}`).send({ workout_ids: [wMon, wMon] }); // k=2
+    expect(put.body.workouts.map((w) => w.id)).toEqual([wMon, wMon]);
+
+    const afterPlan = await request(ctx.app).get(`/api/week?today=${day}`);
+    // The template already planned Monday once (m contributes 1); the override
+    // replaces it with 2 entries, a net +1 for the week's M.
+    expect(afterPlan.body.m).toBe(baseline.body.m + 1);
+
+    await session(wMon, `${day}T09:00:00.000Z`); // j=1 -> satisfied=min(2,1)=1, no off-plan (same workout)
+    const afterSession = await request(ctx.app).get(`/api/week?today=${day}`);
+
+    expect(afterSession.body.m).toBe(afterPlan.body.m); // m unaffected by sessions
+    expect(afterSession.body.n).toBe(afterPlan.body.n + 1);
   });
 });
 
