@@ -1,0 +1,35 @@
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { AppShell } from './components/layout/AppShell';
+import { WeekPage } from './pages/WeekPage';
+import { WorkoutsPage } from './pages/WorkoutsPage';
+import { WorkoutDetailPage } from './pages/WorkoutDetailPage';
+import { BuildPage } from './pages/BuildPage';
+import { TrackPage } from './pages/TrackPage';
+import { ExercisesPage } from './pages/ExercisesPage';
+import { ExerciseDetailPage } from './pages/ExerciseDetailPage';
+import { ExerciseFormPage } from './pages/ExerciseFormPage';
+import { HistoryPage } from './pages/HistoryPage';
+import { SessionDetailPage } from './pages/SessionDetailPage';
+
+export function App() {
+  return (
+    <AppShell>
+      <Routes>
+        <Route path="/" element={<Navigate to="/week" replace />} />
+        <Route path="/week" element={<WeekPage />} />
+        <Route path="/workouts" element={<WorkoutsPage />} />
+        <Route path="/workouts/:workoutId" element={<WorkoutDetailPage />} />
+        <Route path="/build" element={<BuildPage />} />
+        <Route path="/build/:workoutId" element={<BuildPage />} />
+        <Route path="/track/:workoutId" element={<TrackPage />} />
+        <Route path="/exercises" element={<ExercisesPage />} />
+        <Route path="/exercises/new" element={<ExerciseFormPage />} />
+        <Route path="/exercises/:exerciseId" element={<ExerciseDetailPage />} />
+        <Route path="/exercises/:exerciseId/edit" element={<ExerciseFormPage />} />
+        <Route path="/history" element={<HistoryPage />} />
+        <Route path="/history/:sessionId" element={<SessionDetailPage />} />
+        <Route path="*" element={<Navigate to="/week" replace />} />
+      </Routes>
+    </AppShell>
+  );
+}

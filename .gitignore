@@ -1,0 +1,28 @@
+node_modules/
+npm-debug.log*
+
+# server DB (WAL mode sidecars too)
+server/reps.db
+server/reps.db-wal
+server/reps.db-shm
+server/reps.test.db
+server/reps.test.db-wal
+server/reps.test.db-shm
+
+# uploaded/derived media (keep seed media checked in if any is added under server/media/seed/)
+server/media/*
+!server/media/.gitkeep
+!server/media/drafts
+server/media/drafts/*
+!server/media/drafts/.gitkeep
+
+# client build output
+client/dist/
+client/node_modules/
+
+# misc
+.DS_Store
+*.log
+.env
+.env.local
+*.tsbuildinfo

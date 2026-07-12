@@ -1,0 +1,31 @@
+{
+  "name": "reps",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Reps — personal workout tracker. Express + better-sqlite3 server, React + Vite client.",
+  "scripts": {
+    "dev": "concurrently -n server,client -c blue,magenta \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "node --watch server/index.js",
+    "dev:client": "npm run dev --prefix client",
+    "build": "npm run build:client && echo 'server needs no build step'",
+    "build:client": "npm run build --prefix client",
+    "start": "NODE_ENV=production node server/index.js",
+    "test": "vitest run",
+    "seed": "node server/seed.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "multer": "^2.2.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "supertest": "^7.0.0",
+    "vitest": "^4.1.10"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

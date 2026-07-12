@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#E7E4DE;font-family:'Hanken Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:#B15834}a:hover{color:#96482a}
+  .dv-turn{padding:44px 48px 36px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+  .dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 24px}
+  .dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1A1815;color:#fff;border-radius:4px;text-decoration:none}
+  .dv-tname{font:600 13px/1.2 'Hanken Grotesk',system-ui,sans-serif;color:#1A1815}
+  .dv-opts{display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start}
+  .dv-opt{flex:none;display:flex;flex-direction:column;gap:11px;scroll-margin-top:16px}
+  .dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1A1815;border-radius:5px;text-decoration:none}
+  .dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 12px/1.3 'Hanken Grotesk',system-ui,sans-serif;color:rgba(0,0,0,.5)}
+  .dv-opt:target .dv-oid{background:#B15834;color:#fff}
+  .dv-next{margin:26px 0 0;font:13px/1.6 'Hanken Grotesk',system-ui,sans-serif;color:rgba(0,0,0,.55)}
+  /* ---- app primitives ---- */
+  .win{width:1060px;border-radius:15px;overflow:hidden;box-shadow:0 34px 70px -24px rgba(38,30,22,.42);border:1px solid rgba(0,0,0,.07);background:#fff}
+  .winbar{position:relative;height:46px;background:#EFEBE3;border-bottom:1px solid rgba(0,0,0,.06);display:flex;align-items:center;padding:0 16px;gap:8px}
+  .tl{width:12px;height:12px;border-radius:50%}
+  .urlpill{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:6px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:8px;padding:5px 14px;font-size:12.5px;color:#8A857C}
+  .body{display:flex;height:672px}
+  .side{width:238px;flex:none;background:#FBF9F4;border-right:1px solid rgba(0,0,0,.06);display:flex;flex-direction:column;padding:20px 16px}
+  .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 22px}
+  .logo{width:28px;height:28px;border-radius:8px;background:#1A1815;display:flex;align-items:center;justify-content:center;flex:none}
+  .navi{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:9px;font-size:14px;color:#6E6A62;font-weight:500;cursor:pointer}
+  .navi.on{background:#EDE7DD;color:#1A1815;font-weight:600}
+  .navi:hover:not(.on){background:rgba(0,0,0,.035)}
+  .main{flex:1;background:#fff;overflow:hidden;position:relative}
+  .eyebrow{font-size:11px;font-weight:600;letter-spacing:.14em;color:#A39C90;text-transform:uppercase}
+  .h1{font-size:38px;font-weight:700;letter-spacing:-.02em;color:#1A1815;margin:6px 0 0}
+  .search{display:flex;align-items:center;gap:9px;background:#F4F1EB;border:1px solid rgba(0,0,0,.05);border-radius:11px;padding:11px 15px;color:#A39C90;font-size:14px}
+  .chip{padding:8px 15px;border-radius:20px;font-size:13px;font-weight:600;color:#6E6A62;background:#F4F1EB;cursor:pointer;white-space:nowrap}
+  .chip.on{background:#1A1815;color:#fff}
+  .card{display:flex;flex-direction:column;gap:11px;cursor:pointer}
+  .block{position:relative;height:152px;border-radius:13px;overflow:hidden}
+  .heart{position:absolute;top:11px;right:11px;width:31px;height:31px;border-radius:50%;background:rgba(255,255,255,.82);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+  .tag{position:absolute;left:11px;bottom:11px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;color:#fff;background:rgba(20,16,12,.42);backdrop-filter:blur(4px)}
+  .ctitle{font-size:15.5px;font-weight:600;color:#1A1815}
+  .cmeta{font-size:13px;color:#948E82;margin-top:2px}
+  .pill{padding:4px 10px;border-radius:7px;background:#F4F1EB;font-size:12px;font-weight:600;color:#6E6A62}
+  /* phone */
+  .phone{width:322px;height:670px;border-radius:46px;background:#111;padding:11px;box-shadow:0 34px 70px -24px rgba(38,30,22,.42);flex:none}
+  .pscreen{width:100%;height:100%;border-radius:36px;overflow:hidden;background:#fff;position:relative;display:flex;flex-direction:column}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:132px;height:27px;background:#111;border-radius:0 0 16px 16px;z-index:20}
+  .status{display:flex;justify-content:space-between;align-items:center;padding:13px 26px 4px;font-size:13px;font-weight:600;color:#1A1815}
+  .btabs{display:flex;justify-content:space-around;align-items:center;padding:9px 8px 20px;border-top:1px solid rgba(0,0,0,.06);background:#FBF9F4}
+  .btab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:600;color:#B4AC9E}
+  .btab.on{color:#1A1815}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t2">
+  <div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">New main page — This Week (weekly view)</span></div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="2a">
+      <div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>This Week — main page (desktop)</div>
+      <div class="win">
+        <div class="winbar"><span class="tl" style="background:#F0645A"></span><span class="tl" style="background:#F6BE4F"></span><span class="tl" style="background:#5FC454"></span>
+          <div class="urlpill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#B4AC9E" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>reps.app/week</div>
+        </div>
+        <div class="body" style="height:1140px">
+          <div class="side">
+            <div class="brand"><div class="logo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg></div><span style="font-size:17px;font-weight:700;color:#1A1815">Reps</span></div>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <div class="navi on"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>This Week</div>
+              <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg>Workouts</div>
+              <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Build</div>
+              <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Exercises</div>
+              <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>History</div>
+            </div>
+            <div style="margin-top:auto;display:flex;align-items:center;gap:11px;padding:12px 8px 2px;border-top:1px solid rgba(0,0,0,.06)">
+              <div style="width:34px;height:34px;border-radius:50%;background:#E7DFD2;display:flex;align-items:center;justify-content:center;font-weight:700;color:#8A7A5F;font-size:14px">A</div>
+              <div><div style="font-size:13.5px;font-weight:600;color:#1A1815">My Training</div><div style="font-size:12px;color:#A39C90">8 workouts</div></div>
+            </div>
+          </div>
+          <div class="main">
+            <div style="padding:34px 38px 0">
+              <div class="eyebrow">My Training</div><h1 class="h1">This Week</h1>
+              <!-- this week strip -->
+              <div style="margin:22px 0 4px;padding:18px 22px;background:#F7F4EE;border-radius:14px">
+                <div style="display:flex;align-items:center;gap:22px">
+                  <div style="flex:none"><div style="font-size:12px;color:#A39C90;font-weight:600">THIS WEEK</div><div style="font-size:22px;font-weight:700;color:#1A1815;margin-top:2px">2 <span style="font-size:15px;color:#948E82;font-weight:500">of 5 workouts</span></div></div>
+                  <div style="display:flex;gap:12px;margin-left:2px">
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:7px"><span style="font-size:10px;font-weight:700;color:#A39C90">M</span><div style="width:32px;height:32px;border-radius:50%;background:#567a3e;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M5 12l4 4L19 7"/></svg></div></div>
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:7px"><span style="font-size:10px;font-weight:700;color:#A39C90">T</span><div style="width:32px;height:32px;border-radius:50%;background:#ECEAE4;display:flex;align-items:center;justify-content:center"><div style="width:12px;height:2.5px;border-radius:2px;background:#B4AC9E"></div></div></div>
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:7px"><span style="font-size:10px;font-weight:700;color:#A39C90">W</span><div style="width:32px;height:32px;border-radius:50%;background:#567a3e;display:flex;align-items:center;justify-content:center"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M5 12l4 4L19 7"/></svg></div></div>
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:7px"><span style="font-size:10px;font-weight:800;color:#1A1815">T</span><div style="width:32px;height:32px;border-radius:50%;background:#fff;border:2px solid #1A1815;display:flex;align-items:center;justify-content:center"><div style="width:8px;height:8px;border-radius:50%;background:#1A1815"></div></div></div>
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:7px"><span style="font-size:10px;font-weight:700;color:#A39C90">F</span><div style="width:32px;height:32px;border-radius:50%;background:#fff;border:1.5px dashed #CFC6B6"></div></div>
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:7px"><span style="font-size:10px;font-weight:700;color:#A39C90">S</span><div style="width:32px;height:32px;border-radius:50%;background:#ECEAE4;display:flex;align-items:center;justify-content:center"><div style="width:12px;height:2.5px;border-radius:2px;background:#B4AC9E"></div></div></div>
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:7px"><span style="font-size:10px;font-weight:700;color:#A39C90">S</span><div style="width:32px;height:32px;border-radius:50%;background:#fff;border:1.5px dashed #CFC6B6"></div></div>
+                  </div>
+                  <div style="margin-left:auto;text-align:right"><div style="font-size:12px;color:#A39C90;font-weight:600">STREAK</div><div style="font-size:22px;font-weight:700;color:#B15834;margin-top:2px">6 <span style="font-size:15px;color:#948E82;font-weight:500">days</span></div></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:18px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(0,0,0,.06)">
+                  <div style="display:flex;align-items:center;gap:7px"><div style="width:18px;height:18px;border-radius:50%;background:#567a3e;display:flex;align-items:center;justify-content:center;flex:none"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"><path d="M5 12l4 4L19 7"/></svg></div><span style="font-size:12px;color:#6E6A62;font-weight:500">Done</span></div>
+                  <div style="display:flex;align-items:center;gap:7px"><div style="width:18px;height:18px;border-radius:50%;background:#ECEAE4;display:flex;align-items:center;justify-content:center;flex:none"><div style="width:8px;height:2px;border-radius:2px;background:#B4AC9E"></div></div><span style="font-size:12px;color:#6E6A62;font-weight:500">Rest</span></div>
+                  <div style="display:flex;align-items:center;gap:7px"><div style="width:18px;height:18px;border-radius:50%;background:#FBECE6;border:1.5px solid #E3B7A8;display:flex;align-items:center;justify-content:center;flex:none"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#C0654B" stroke-width="3" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg></div><span style="font-size:12px;color:#6E6A62;font-weight:500">Missed</span></div>
+                  <div style="display:flex;align-items:center;gap:7px"><div style="width:18px;height:18px;border-radius:50%;background:#fff;border:1.5px dashed #CFC6B6;flex:none"></div><span style="font-size:12px;color:#6E6A62;font-weight:500">Planned</span></div>
+                  <span style="margin-left:auto;font-size:12px;color:#948E82;font-style:italic">Rest days don't count against your streak</span>
+                </div>
+              </div>
+              <!-- 7-day rail -->
+              <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin:22px 0 28px">
+                <div style="border-radius:12px;padding:12px 11px;background:#F7F4EE;display:flex;flex-direction:column;gap:10px;min-height:104px">
+                  <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;color:#A39C90;letter-spacing:.04em">MON</span><span style="font-size:13px;font-weight:700;color:#8A857C">10</span></div>
+                  <div style="margin-top:auto;background:#b0803f;color:#fff;border-radius:9px;padding:8px 9px;font-size:11.5px;font-weight:700;line-height:1.2;display:flex;align-items:center;gap:5px;opacity:.7"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M5 12l4 4L19 7"/></svg>Pull Day A</div>
+                </div>
+                <div style="border-radius:12px;padding:12px 11px;background:#F7F4EE;display:flex;flex-direction:column;gap:10px;min-height:104px">
+                  <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;color:#A39C90;letter-spacing:.04em">TUE</span><span style="font-size:13px;font-weight:700;color:#8A857C">11</span></div>
+                  <div style="margin-top:auto;font-size:11.5px;font-weight:600;color:#BEB6A7;text-align:center;padding:8px 0">Rest</div>
+                </div>
+                <div style="border-radius:12px;padding:12px 11px;background:#F7F4EE;display:flex;flex-direction:column;gap:10px;min-height:104px">
+                  <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;color:#A39C90;letter-spacing:.04em">WED</span><span style="font-size:13px;font-weight:700;color:#8A857C">12</span></div>
+                  <div style="margin-top:auto;background:#5f5170;color:#fff;border-radius:9px;padding:8px 9px;font-size:11.5px;font-weight:700;line-height:1.2;display:flex;align-items:center;gap:5px;opacity:.7"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M5 12l4 4L19 7"/></svg>Push Day A</div>
+                </div>
+                <div style="border-radius:12px;padding:12px 11px;background:#fff;border:2px solid #1A1815;display:flex;flex-direction:column;gap:10px;min-height:104px;position:relative">
+                  <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;color:#1A1815;letter-spacing:.04em">THU</span><span style="font-size:13px;font-weight:800;color:#1A1815">13</span></div>
+                  <span style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:#1A1815;color:#fff;font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 8px;border-radius:20px">TODAY</span>
+                  <div style="margin-top:auto;background:#567a3e;color:#fff;border-radius:9px;padding:8px 9px;font-size:11.5px;font-weight:700;line-height:1.2">Leg Day</div>
+                </div>
+                <div style="border-radius:12px;padding:12px 11px;background:#F7F4EE;display:flex;flex-direction:column;gap:10px;min-height:104px">
+                  <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;color:#A39C90;letter-spacing:.04em">FRI</span><span style="font-size:13px;font-weight:700;color:#8A857C">14</span></div>
+                  <div style="margin-top:auto;background:#a89a76;color:#fff;border-radius:9px;padding:8px 9px;font-size:11.5px;font-weight:700;line-height:1.2">Core & Mobility</div>
+                </div>
+                <div style="border-radius:12px;padding:12px 11px;background:#F7F4EE;display:flex;flex-direction:column;gap:10px;min-height:104px">
+                  <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;color:#A39C90;letter-spacing:.04em">SAT</span><span style="font-size:13px;font-weight:700;color:#8A857C">15</span></div>
+                  <div style="margin-top:auto;font-size:11.5px;font-weight:600;color:#BEB6A7;text-align:center;padding:8px 0">Rest</div>
+                </div>
+                <div style="border-radius:12px;padding:12px 11px;background:#F7F4EE;display:flex;flex-direction:column;gap:10px;min-height:104px">
+                  <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;color:#A39C90;letter-spacing:.04em">SUN</span><span style="font-size:13px;font-weight:700;color:#8A857C">16</span></div>
+                  <div style="margin-top:auto;background:#b64436;color:#fff;border-radius:9px;padding:8px 9px;font-size:11.5px;font-weight:700;line-height:1.2">5K Interval Run</div>
+                </div>
+              </div>
+              <!-- today's workout at top -->
+              <div style="position:relative;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#567a3e,#3c5429);padding:24px 26px">
+                <span style="font-size:11px;font-weight:700;letter-spacing:.14em;color:rgba(255,255,255,.72)">TODAY · THURSDAY</span>
+                <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:8px">
+                  <div><div style="font-size:28px;font-weight:700;color:#fff">Leg Day</div><div style="font-size:14px;color:rgba(255,255,255,.82);margin-top:4px">Quads · Hamstrings · Glutes — 60 min · 6 exercises</div></div>
+                  <div style="display:flex;align-items:center;gap:9px;background:#fff;color:#1A1815;font-weight:700;font-size:15px;padding:12px 22px;border-radius:12px"><svg width="15" height="15" viewBox="0 0 24 24" fill="#1A1815"><path d="M7 5v14l12-7z"/></svg>Start workout</div>
+                </div>
+              </div>
+              <!-- exercises beneath -->
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin:26px 0 14px"><div style="font-size:16px;font-weight:700;color:#1A1815">Exercises</div><span style="font-size:13px;color:#948E82">6 exercises · ~60 min</span></div>
+              <div style="display:flex;flex-direction:column;gap:10px;padding-bottom:34px">
+                <div style="display:flex;align-items:center;gap:14px;padding:13px 16px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px"><div style="width:38px;height:38px;border-radius:9px;background:#567a3e;flex:none;position:relative"><svg style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)" width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l12-7z"/></svg></div><div style="flex:1"><div style="font-size:14.5px;font-weight:600;color:#1A1815">Back Squat</div><div style="font-size:12.5px;color:#948E82">Quads · Glutes</div></div><span style="font-size:13.5px;font-weight:600;color:#6E6A62">4 × 6–8</span><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C4BBAD" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></div>
+                <div style="display:flex;align-items:center;gap:14px;padding:13px 16px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px"><div style="width:38px;height:38px;border-radius:9px;background:#6f7a3e;flex:none;position:relative"><svg style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)" width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l12-7z"/></svg></div><div style="flex:1"><div style="font-size:14.5px;font-weight:600;color:#1A1815">Romanian Deadlift</div><div style="font-size:12.5px;color:#948E82">Hamstrings · Glutes</div></div><span style="font-size:13.5px;font-weight:600;color:#6E6A62">3 × 8–10</span><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C4BBAD" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></div>
+                <div style="display:flex;align-items:center;gap:14px;padding:13px 16px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px"><div style="width:38px;height:38px;border-radius:9px;background:#8c6330;flex:none;position:relative"><svg style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)" width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l12-7z"/></svg></div><div style="flex:1"><div style="font-size:14.5px;font-weight:600;color:#1A1815">Leg Press</div><div style="font-size:12.5px;color:#948E82">Quads</div></div><span style="font-size:13.5px;font-weight:600;color:#6E6A62">3 × 10–12</span><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C4BBAD" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></div>
+                <div style="display:flex;align-items:center;gap:14px;padding:13px 16px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px"><div style="width:38px;height:38px;border-radius:9px;background:#a89a76;flex:none;position:relative"><svg style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)" width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l12-7z"/></svg></div><div style="flex:1"><div style="font-size:14.5px;font-weight:600;color:#1A1815">Walking Lunge</div><div style="font-size:12.5px;color:#948E82">Glutes · Quads</div></div><span style="font-size:13.5px;font-weight:600;color:#6E6A62">3 × 12</span><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C4BBAD" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></div>
+                <div style="display:flex;align-items:center;gap:14px;padding:13px 16px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px"><div style="width:38px;height:38px;border-radius:9px;background:#567a3e;flex:none;position:relative"><svg style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)" width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l12-7z"/></svg></div><div style="flex:1"><div style="font-size:14.5px;font-weight:600;color:#1A1815">Seated Leg Curl</div><div style="font-size:12.5px;color:#948E82">Hamstrings</div></div><span style="font-size:13.5px;font-weight:600;color:#6E6A62">3 × 12–15</span><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C4BBAD" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></div>
+                <div style="display:flex;align-items:center;gap:14px;padding:13px 16px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px"><div style="width:38px;height:38px;border-radius:9px;background:#b0803f;flex:none;position:relative"><svg style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)" width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l12-7z"/></svg></div><div style="flex:1"><div style="font-size:14.5px;font-weight:600;color:#1A1815">Standing Calf Raise</div><div style="font-size:12.5px;color:#948E82">Calves</div></div><span style="font-size:13.5px;font-weight:600;color:#6E6A62">4 × 15</span><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C4BBAD" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dv-opt" id="2b">
+      <div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a>This Week — phone</div>
+      <div class="phone"><div class="pscreen">
+        <div class="notch"></div>
+        <div class="status"><span>9:41</span><span style="display:flex;align-items:center;gap:5px"><svg width="17" height="11" viewBox="0 0 24 16" fill="#1A1815"><rect x="0" y="9" width="4" height="7" rx="1"/><rect x="6" y="6" width="4" height="10" rx="1"/><rect x="12" y="3" width="4" height="13" rx="1"/><rect x="18" y="0" width="4" height="16" rx="1"/></svg><svg width="22" height="11" viewBox="0 0 26 13" fill="none"><rect x="1" y="1" width="21" height="11" rx="3" stroke="#1A1815" stroke-width="1.3"/><rect x="3" y="3" width="15" height="7" rx="1.5" fill="#1A1815"/><rect x="23" y="4" width="2" height="5" rx="1" fill="#1A1815"/></svg></span></div>
+        <div style="flex:1;overflow:hidden;padding:6px 18px 0;display:flex;flex-direction:column">
+          <div><div class="eyebrow">My Training</div><h1 class="h1" style="font-size:29px">This Week</h1></div>
+          <div style="background:#F7F4EE;border-radius:14px;padding:14px 15px;margin:14px 0 14px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:13px"><div style="font-size:15px;font-weight:700;color:#1A1815">2 <span style="font-size:12.5px;color:#948E82;font-weight:500">of 5 workouts</span></div><div style="font-size:13px;font-weight:700;color:#B15834">6-day streak</div></div>
+            <div style="display:flex;justify-content:space-between"><div style="display:flex;flex-direction:column;align-items:center;gap:5px"><span style="font-size:9px;font-weight:700;color:#A39C90">M</span><div style="width:28px;height:28px;border-radius:50%;background:#567a3e;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round"><path d="M5 12l4 4L19 7"/></svg></div></div><div style="display:flex;flex-direction:column;align-items:center;gap:5px"><span style="font-size:9px;font-weight:700;color:#A39C90">T</span><div style="width:28px;height:28px;border-radius:50%;background:#ECEAE4;display:flex;align-items:center;justify-content:center"><div style="width:10px;height:2.5px;border-radius:2px;background:#B4AC9E"></div></div></div><div style="display:flex;flex-direction:column;align-items:center;gap:5px"><span style="font-size:9px;font-weight:700;color:#A39C90">W</span><div style="width:28px;height:28px;border-radius:50%;background:#567a3e;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round"><path d="M5 12l4 4L19 7"/></svg></div></div><div style="display:flex;flex-direction:column;align-items:center;gap:5px"><span style="font-size:9px;font-weight:800;color:#1A1815">T</span><div style="width:28px;height:28px;border-radius:50%;background:#fff;border:2px solid #1A1815;display:flex;align-items:center;justify-content:center"><div style="width:7px;height:7px;border-radius:50%;background:#1A1815"></div></div></div><div style="display:flex;flex-direction:column;align-items:center;gap:5px"><span style="font-size:9px;font-weight:700;color:#A39C90">F</span><div style="width:28px;height:28px;border-radius:50%;background:#fff;border:1.5px dashed #CFC6B6"></div></div><div style="display:flex;flex-direction:column;align-items:center;gap:5px"><span style="font-size:9px;font-weight:700;color:#A39C90">S</span><div style="width:28px;height:28px;border-radius:50%;background:#ECEAE4;display:flex;align-items:center;justify-content:center"><div style="width:10px;height:2.5px;border-radius:2px;background:#B4AC9E"></div></div></div><div style="display:flex;flex-direction:column;align-items:center;gap:5px"><span style="font-size:9px;font-weight:700;color:#A39C90">S</span><div style="width:28px;height:28px;border-radius:50%;background:#fff;border:1.5px dashed #CFC6B6"></div></div></div>
+            <div style="font-size:11px;color:#948E82;font-style:italic;margin-top:12px">Rest days don't count against your streak</div>
+          </div>
+          <div style="border-radius:15px;background:linear-gradient(135deg,#567a3e,#3c5429);padding:15px 16px;margin-bottom:15px">
+            <span style="font-size:10px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.72)">TODAY · THURSDAY</span>
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:6px"><div><div style="font-size:20px;font-weight:700;color:#fff">Leg Day</div><div style="font-size:12px;color:rgba(255,255,255,.82);margin-top:2px">60 min · 6 exercises</div></div><div style="display:flex;align-items:center;gap:6px;background:#fff;color:#1A1815;font-weight:700;font-size:13px;padding:9px 15px;border-radius:10px"><svg width="12" height="12" viewBox="0 0 24 24" fill="#1A1815"><path d="M7 5v14l12-7z"/></svg>Start</div></div>
+          </div>
+          <div style="font-size:12px;font-weight:700;color:#A39C90;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Exercises</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:11px;padding:9px 11px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:11px"><div style="width:32px;height:32px;border-radius:8px;background:#567a3e;flex:none;position:relative"><svg style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)" width="11" height="11" viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l12-7z"/></svg></div><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:#1A1815;line-height:1.15">Back Squat</div><div style="font-size:11.5px;color:#948E82">Quads · Glutes</div></div><span style="font-size:12.5px;font-weight:600;color:#6E6A62;white-space:nowrap">4 × 6–8</span></div>
+            <div style="display:flex;align-items:center;gap:11px;padding:9px 11px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:11px"><div style="width:32px;height:32px;border-radius:8px;background:#6f7a3e;flex:none;position:relative"><svg style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)" width="11" height="11" viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l12-7z"/></svg></div><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:#1A1815;line-height:1.15">Romanian Deadlift</div><div style="font-size:11.5px;color:#948E82">Hamstrings</div></div><span style="font-size:12.5px;font-weight:600;color:#6E6A62;white-space:nowrap">3 × 8–10</span></div>
+            <div style="display:flex;align-items:center;gap:11px;padding:9px 11px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:11px"><div style="width:32px;height:32px;border-radius:8px;background:#8c6330;flex:none;position:relative"><svg style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)" width="11" height="11" viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l12-7z"/></svg></div><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:#1A1815;line-height:1.15">Leg Press</div><div style="font-size:11.5px;color:#948E82">Quads</div></div><span style="font-size:12.5px;font-weight:600;color:#6E6A62;white-space:nowrap">3 × 10–12</span></div>
+            <div style="display:flex;align-items:center;gap:11px;padding:9px 11px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:11px"><div style="width:32px;height:32px;border-radius:8px;background:#a89a76;flex:none;position:relative"><svg style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)" width="11" height="11" viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l12-7z"/></svg></div><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:#1A1815;line-height:1.15">Walking Lunge</div><div style="font-size:11.5px;color:#948E82">Glutes · Quads</div></div><span style="font-size:12.5px;font-weight:600;color:#6E6A62;white-space:nowrap">3 × 12</span></div>
+            <div style="display:flex;align-items:center;gap:11px;padding:9px 11px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:11px"><div style="width:32px;height:32px;border-radius:8px;background:#567a3e;flex:none;position:relative"><svg style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)" width="11" height="11" viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l12-7z"/></svg></div><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:#1A1815;line-height:1.15">Seated Leg Curl</div><div style="font-size:11.5px;color:#948E82">Hamstrings</div></div><span style="font-size:12.5px;font-weight:600;color:#6E6A62;white-space:nowrap">3 × 12–15</span></div>
+            <div style="display:flex;align-items:center;gap:11px;padding:9px 11px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:11px"><div style="width:32px;height:32px;border-radius:8px;background:#b0803f;flex:none;position:relative"><svg style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)" width="11" height="11" viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l12-7z"/></svg></div><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:#1A1815;line-height:1.15">Standing Calf Raise</div><div style="font-size:11.5px;color:#948E82">Calves</div></div><span style="font-size:12.5px;font-weight:600;color:#6E6A62;white-space:nowrap">4 × 15</span></div>
+          </div>
+        </div>
+        <div class="btabs">
+          <div class="btab on"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>This Week</div>
+          <div class="btab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg>Workouts</div>
+          <div class="btab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Build</div>
+          <div class="btab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>History</div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+  <p class="dv-next">Try next: "let me drag workouts onto days to reschedule on <a class="dv-oid" href="#2a">2a</a>" · "sync the bottom nav across every phone screen" · "wire it into a working prototype"</p>
+</section>
+<section class="dv-turn" id="t1">
+  <div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Reps — workout tracker · Home directions + full flows (Pantry theme)</span></div>
+  <div class="dv-opts">
+
+    <!-- ============ 1a : HOME classic ============ -->
+    <div class="dv-opt" id="1a">
+      <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Home / Library — classic (closest to your screenshot)</div>
+      <div class="win">
+        <div class="winbar"><span class="tl" style="background:#F0645A"></span><span class="tl" style="background:#F6BE4F"></span><span class="tl" style="background:#5FC454"></span>
+          <div class="urlpill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#B4AC9E" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>reps.app</div>
+        </div>
+        <div class="body">
+          <div class="side">
+            <div class="brand"><div class="logo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg></div><span style="font-size:17px;font-weight:700;color:#1A1815">Reps</span></div>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <div class="navi on"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg>Workouts</div>
+              <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Build</div>
+              <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Exercises</div>
+              <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>History</div>
+            </div>
+            <div style="margin-top:auto;display:flex;align-items:center;gap:11px;padding:12px 8px 2px;border-top:1px solid rgba(0,0,0,.06)">
+              <div style="width:34px;height:34px;border-radius:50%;background:#E7DFD2;display:flex;align-items:center;justify-content:center;font-weight:700;color:#8A7A5F;font-size:14px">A</div>
+              <div><div style="font-size:13.5px;font-weight:600;color:#1A1815">My Training</div><div style="font-size:12px;color:#A39C90">8 workouts</div></div>
+            </div>
+          </div>
+          <div class="main">
+            <div style="padding:34px 38px 0">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div><div class="eyebrow">My Training</div><h1 class="h1">Workouts</h1></div>
+                <div class="search" style="width:290px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B4AC9E" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>Search workouts, exercises…</div>
+              </div>
+              <div style="display:flex;gap:9px;margin:26px 0 24px">
+                <span class="chip on">All</span><span class="chip">Strength</span><span class="chip">Push</span><span class="chip">Pull</span><span class="chip">Legs</span><span class="chip">Cardio</span><span class="chip">Mobility</span>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:22px 20px">
+                <div class="card"><div class="block" style="background:linear-gradient(150deg,#5f5170,#453a54)"><div class="heart"><svg width="16" height="16" viewBox="0 0 24 24" fill="#B15834" stroke="#B15834" stroke-width="1.5"><path d="M12 20s-7-4.4-7-9a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 4.6-7 9-7 9z"/></svg></div></div><div><div class="ctitle">Push Day A</div><div class="cmeta">55 min · 8 exercises · Strength</div></div></div>
+                <div class="card"><div class="block" style="background:linear-gradient(150deg,#b0803f,#8c6330)"><div class="heart"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7A736A" stroke-width="1.7"><path d="M12 20s-7-4.4-7-9a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 4.6-7 9-7 9z"/></svg></div></div><div><div class="ctitle">Pull Day A</div><div class="cmeta">50 min · 7 exercises · Strength</div></div></div>
+                <div class="card"><div class="block" style="background:linear-gradient(150deg,#567a3e,#3f5b2c)"><div class="heart"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7A736A" stroke-width="1.7"><path d="M12 20s-7-4.4-7-9a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 4.6-7 9-7 9z"/></svg></div></div><div><div class="ctitle">Leg Day</div><div class="cmeta">60 min · 6 exercises · Strength</div></div></div>
+                <div class="card"><div class="block" style="background:linear-gradient(150deg,#b96139,#95482a)"><div class="heart"><svg width="16" height="16" viewBox="0 0 24 24" fill="#B15834" stroke="#B15834" stroke-width="1.5"><path d="M12 20s-7-4.4-7-9a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 4.6-7 9-7 9z"/></svg></div></div><div><div class="ctitle">Full Body Express</div><div class="cmeta">30 min · 5 exercises · Mixed</div></div></div>
+                <div class="card"><div class="block" style="background:linear-gradient(150deg,#a89a76,#897c5b)"><div class="heart"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7A736A" stroke-width="1.7"><path d="M12 20s-7-4.4-7-9a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 4.6-7 9-7 9z"/></svg></div></div><div><div class="ctitle">Core & Mobility</div><div class="cmeta">25 min · 6 exercises · Mobility</div></div></div>
+                <div class="card"><div class="block" style="background:linear-gradient(150deg,#b64436,#8e3227)"><div class="heart"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7A736A" stroke-width="1.7"><path d="M12 20s-7-4.4-7-9a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 4.6-7 9-7 9z"/></svg></div></div><div><div class="ctitle">5K Interval Run</div><div class="cmeta">35 min · Cardio</div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1i">
+      <div class="dv-olabel"><a class="dv-oid" href="#1i">1i</a>Workouts — phone</div>
+      <div class="phone"><div class="pscreen">
+        <div class="notch"></div>
+        <div class="status"><span>9:41</span><span style="display:flex;align-items:center;gap:5px"><svg width="17" height="11" viewBox="0 0 24 16" fill="#1A1815"><rect x="0" y="9" width="4" height="7" rx="1"/><rect x="6" y="6" width="4" height="10" rx="1"/><rect x="12" y="3" width="4" height="13" rx="1"/><rect x="18" y="0" width="4" height="16" rx="1"/></svg><svg width="22" height="11" viewBox="0 0 26 13" fill="none"><rect x="1" y="1" width="21" height="11" rx="3" stroke="#1A1815" stroke-width="1.3"/><rect x="3" y="3" width="15" height="7" rx="1.5" fill="#1A1815"/><rect x="23" y="4" width="2" height="5" rx="1" fill="#1A1815"/></svg></span></div>
+        <div style="flex:1;overflow:hidden;padding:6px 18px 0">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="eyebrow">My Training</div><h1 class="h1" style="font-size:29px">Workouts</h1></div><span style="font-size:18px;color:#C4BBAD;font-weight:600;margin-top:14px">8</span></div>
+          <div class="search" style="margin:15px 0 15px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B4AC9E" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>Search workouts</div>
+          <div style="display:flex;gap:8px;margin-bottom:17px;overflow:hidden"><span class="chip on">All</span><span class="chip">Strength</span><span class="chip">Push</span><span class="chip">Pull</span></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px 13px">
+            <div style="display:flex;flex-direction:column;gap:8px"><div style="position:relative;height:112px;border-radius:12px;background:linear-gradient(150deg,#5f5170,#453a54)"><div style="position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="#B15834" stroke="#B15834" stroke-width="1.5"><path d="M12 20s-7-4.4-7-9a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 4.6-7 9-7 9z"/></svg></div></div><div><div style="font-size:13.5px;font-weight:600;color:#1A1815;line-height:1.2">Push Day A</div><div style="font-size:11.5px;color:#948E82;margin-top:2px">55 min · 8 ex</div></div></div>
+            <div style="display:flex;flex-direction:column;gap:8px"><div style="position:relative;height:112px;border-radius:12px;background:linear-gradient(150deg,#b0803f,#8c6330)"><div style="position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7A736A" stroke-width="1.7"><path d="M12 20s-7-4.4-7-9a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 4.6-7 9-7 9z"/></svg></div></div><div><div style="font-size:13.5px;font-weight:600;color:#1A1815;line-height:1.2">Pull Day A</div><div style="font-size:11.5px;color:#948E82;margin-top:2px">50 min · 7 ex</div></div></div>
+            <div style="display:flex;flex-direction:column;gap:8px"><div style="position:relative;height:112px;border-radius:12px;background:linear-gradient(150deg,#567a3e,#3f5b2c)"><div style="position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7A736A" stroke-width="1.7"><path d="M12 20s-7-4.4-7-9a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 4.6-7 9-7 9z"/></svg></div></div><div><div style="font-size:13.5px;font-weight:600;color:#1A1815;line-height:1.2">Leg Day</div><div style="font-size:11.5px;color:#948E82;margin-top:2px">60 min · 6 ex</div></div></div>
+            <div style="display:flex;flex-direction:column;gap:8px"><div style="position:relative;height:112px;border-radius:12px;background:linear-gradient(150deg,#b96139,#95482a)"><div style="position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="#B15834" stroke="#B15834" stroke-width="1.5"><path d="M12 20s-7-4.4-7-9a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 4.6-7 9-7 9z"/></svg></div></div><div><div style="font-size:13.5px;font-weight:600;color:#1A1815;line-height:1.2">Full Body Express</div><div style="font-size:11.5px;color:#948E82;margin-top:2px">30 min · 5 ex</div></div></div>
+          </div>
+        </div>
+        <div class="btabs">
+          <div class="btab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>This Week</div>
+          <div class="btab on"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg>Workouts</div>
+          <div class="btab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Build</div>
+          <div class="btab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>History</div>
+        </div>
+      </div></div>
+    </div>
+    <!-- ============ 1e : BUILD a workout ============ -->
+    <div class="dv-opt" id="1e">
+      <div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Build / design a workout (desktop)</div>
+      <div class="win">
+        <div class="winbar"><span class="tl" style="background:#F0645A"></span><span class="tl" style="background:#F6BE4F"></span><span class="tl" style="background:#5FC454"></span>
+          <div class="urlpill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#B4AC9E" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>reps.app/build</div>
+        </div>
+        <div class="body">
+          <div class="side">
+            <div class="brand"><div class="logo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg></div><span style="font-size:17px;font-weight:700;color:#1A1815">Reps</span></div>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg>Workouts</div>
+              <div class="navi on"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Build</div>
+              <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Exercises</div>
+              <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>History</div>
+            </div>
+            <div style="margin-top:auto;display:flex;align-items:center;gap:11px;padding:12px 8px 2px;border-top:1px solid rgba(0,0,0,.06)">
+              <div style="width:34px;height:34px;border-radius:50%;background:#E7DFD2;display:flex;align-items:center;justify-content:center;font-weight:700;color:#8A7A5F;font-size:14px">A</div>
+              <div><div style="font-size:13.5px;font-weight:600;color:#1A1815">My Training</div><div style="font-size:12px;color:#A39C90">8 workouts</div></div>
+            </div>
+          </div>
+          <div class="main">
+            <div style="padding:30px 36px 0;height:100%;display:flex;flex-direction:column">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div><div class="eyebrow">Build</div><h1 class="h1" style="font-size:32px">New workout</h1></div>
+                <div style="display:flex;gap:10px;align-items:center"><span style="background:#F4F1EB;color:#6E6A62;font-weight:600;font-size:14px;padding:11px 18px;border-radius:11px">Cancel</span><span style="background:#1A1815;color:#fff;font-weight:600;font-size:14px;padding:11px 20px;border-radius:11px">Save workout</span></div>
+              </div>
+              <div style="display:flex;gap:26px;margin-top:22px;flex:1;overflow:hidden">
+                <div style="flex:1;display:flex;flex-direction:column;gap:16px;overflow:hidden">
+                  <div style="background:#F7F4EE;border-radius:12px;padding:14px 16px;font-size:20px;font-weight:600;color:#1A1815">Push Day A</div>
+                  <div style="display:flex;align-items:center;gap:8px"><span class="chip on">Strength</span><span class="chip">Hypertrophy</span><span class="chip">Power</span><span style="margin-left:auto;font-size:13px;color:#A39C90;font-weight:500">8 exercises · ~55 min</span></div>
+                  <div style="font-size:13px;font-weight:700;letter-spacing:.04em;color:#A39C90;text-transform:uppercase;margin-top:4px">Exercises</div>
+                  <div style="display:flex;flex-direction:column;gap:11px;overflow:hidden">
+                    <div style="display:flex;align-items:center;gap:14px;padding:13px 15px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px"><svg width="14" height="16" viewBox="0 0 12 16" fill="#CFC6B6"><circle cx="3" cy="3" r="1.6"/><circle cx="9" cy="3" r="1.6"/><circle cx="3" cy="8" r="1.6"/><circle cx="9" cy="8" r="1.6"/><circle cx="3" cy="13" r="1.6"/><circle cx="9" cy="13" r="1.6"/></svg><div style="width:36px;height:36px;border-radius:9px;background:#5f5170;flex:none"></div><div style="flex:1"><div style="font-size:14.5px;font-weight:600;color:#1A1815">Barbell Bench Press</div><div style="font-size:12.5px;color:#948E82">Chest</div></div><div style="display:flex;gap:8px"><div style="text-align:center;background:#F7F4EE;border-radius:9px;padding:6px 12px"><div style="font-size:11px;color:#A39C90">Sets</div><div style="font-size:14px;font-weight:700;color:#1A1815">4</div></div><div style="text-align:center;background:#F7F4EE;border-radius:9px;padding:6px 12px"><div style="font-size:11px;color:#A39C90">Reps</div><div style="font-size:14px;font-weight:700;color:#1A1815">8–10</div></div><div style="text-align:center;background:#F7F4EE;border-radius:9px;padding:6px 12px"><div style="font-size:11px;color:#A39C90">Rest</div><div style="font-size:14px;font-weight:700;color:#1A1815">90s</div></div></div></div>
+                    <div style="display:flex;align-items:center;gap:14px;padding:13px 15px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px"><svg width="14" height="16" viewBox="0 0 12 16" fill="#CFC6B6"><circle cx="3" cy="3" r="1.6"/><circle cx="9" cy="3" r="1.6"/><circle cx="3" cy="8" r="1.6"/><circle cx="9" cy="8" r="1.6"/><circle cx="3" cy="13" r="1.6"/><circle cx="9" cy="13" r="1.6"/></svg><div style="width:36px;height:36px;border-radius:9px;background:#8c6330;flex:none"></div><div style="flex:1"><div style="font-size:14.5px;font-weight:600;color:#1A1815">Incline Dumbbell Press</div><div style="font-size:12.5px;color:#948E82">Chest · Shoulders</div></div><div style="display:flex;gap:8px"><div style="text-align:center;background:#F7F4EE;border-radius:9px;padding:6px 12px"><div style="font-size:11px;color:#A39C90">Sets</div><div style="font-size:14px;font-weight:700;color:#1A1815">3</div></div><div style="text-align:center;background:#F7F4EE;border-radius:9px;padding:6px 12px"><div style="font-size:11px;color:#A39C90">Reps</div><div style="font-size:14px;font-weight:700;color:#1A1815">10–12</div></div><div style="text-align:center;background:#F7F4EE;border-radius:9px;padding:6px 12px"><div style="font-size:11px;color:#A39C90">Rest</div><div style="font-size:14px;font-weight:700;color:#1A1815">75s</div></div></div></div>
+                    <div style="display:flex;align-items:center;gap:14px;padding:13px 15px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px"><svg width="14" height="16" viewBox="0 0 12 16" fill="#CFC6B6"><circle cx="3" cy="3" r="1.6"/><circle cx="9" cy="3" r="1.6"/><circle cx="3" cy="8" r="1.6"/><circle cx="9" cy="8" r="1.6"/><circle cx="3" cy="13" r="1.6"/><circle cx="9" cy="13" r="1.6"/></svg><div style="width:36px;height:36px;border-radius:9px;background:#95482a;flex:none"></div><div style="flex:1"><div style="font-size:14.5px;font-weight:600;color:#1A1815">Overhead Press</div><div style="font-size:12.5px;color:#948E82">Shoulders</div></div><div style="display:flex;gap:8px"><div style="text-align:center;background:#F7F4EE;border-radius:9px;padding:6px 12px"><div style="font-size:11px;color:#A39C90">Sets</div><div style="font-size:14px;font-weight:700;color:#1A1815">4</div></div><div style="text-align:center;background:#F7F4EE;border-radius:9px;padding:6px 12px"><div style="font-size:11px;color:#A39C90">Reps</div><div style="font-size:14px;font-weight:700;color:#1A1815">6–8</div></div><div style="text-align:center;background:#F7F4EE;border-radius:9px;padding:6px 12px"><div style="font-size:11px;color:#A39C90">Rest</div><div style="font-size:14px;font-weight:700;color:#1A1815">90s</div></div></div></div>
+                    <div style="display:flex;align-items:center;justify-content:center;gap:9px;padding:14px;border:1.5px dashed #D3CABA;border-radius:12px;color:#8A857C;font-weight:600;font-size:14px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8A857C" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add exercise</div>
+                  </div>
+                </div>
+                <div style="width:300px;flex:none;background:#FBF9F4;border:1px solid rgba(0,0,0,.06);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:14px">
+                  <div style="font-size:15px;font-weight:700;color:#1A1815">Exercise library</div>
+                  <div class="search" style="background:#fff"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B4AC9E" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>Search exercises</div>
+                  <div style="display:flex;flex-direction:column;gap:10px">
+                    <div style="display:flex;align-items:center;gap:11px"><div style="width:38px;height:38px;border-radius:9px;background:#567a3e;flex:none;position:relative"><svg style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)" width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l12-7z"/></svg></div><div style="flex:1"><div style="font-size:13.5px;font-weight:600;color:#1A1815">Cable Fly</div><div style="font-size:12px;color:#948E82">Chest</div></div><div style="width:28px;height:28px;border-radius:8px;background:#EDE7DD;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6E6A62" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
+                    <div style="display:flex;align-items:center;gap:11px"><div style="width:38px;height:38px;border-radius:9px;background:#b0803f;flex:none;position:relative"><svg style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)" width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l12-7z"/></svg></div><div style="flex:1"><div style="font-size:13.5px;font-weight:600;color:#1A1815">Dips</div><div style="font-size:12px;color:#948E82">Chest · Triceps</div></div><div style="width:28px;height:28px;border-radius:8px;background:#EDE7DD;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6E6A62" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
+                    <div style="display:flex;align-items:center;gap:11px"><div style="width:38px;height:38px;border-radius:9px;background:#47588a;flex:none;position:relative"><svg style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)" width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l12-7z"/></svg></div><div style="flex:1"><div style="font-size:13.5px;font-weight:600;color:#1A1815">Lateral Raise</div><div style="font-size:12px;color:#948E82">Shoulders</div></div><div style="width:28px;height:28px;border-radius:8px;background:#EDE7DD;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6E6A62" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
+                    <div style="display:flex;align-items:center;gap:11px"><div style="width:38px;height:38px;border-radius:9px;background:#8e3227;flex:none;position:relative"><svg style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)" width="12" height="12" viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l12-7z"/></svg></div><div style="flex:1"><div style="font-size:13.5px;font-weight:600;color:#1A1815">Skullcrusher</div><div style="font-size:12px;color:#948E82">Triceps</div></div><div style="width:28px;height:28px;border-radius:8px;background:#EDE7DD;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6E6A62" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1j">
+      <div class="dv-olabel"><a class="dv-oid" href="#1j">1j</a>Build a workout — phone</div>
+      <div class="phone"><div class="pscreen">
+        <div class="notch"></div>
+        <div class="status"><span>9:41</span><span style="display:flex;align-items:center;gap:5px"><svg width="17" height="11" viewBox="0 0 24 16" fill="#1A1815"><rect x="0" y="9" width="4" height="7" rx="1"/><rect x="6" y="6" width="4" height="10" rx="1"/><rect x="12" y="3" width="4" height="13" rx="1"/><rect x="18" y="0" width="4" height="16" rx="1"/></svg><svg width="22" height="11" viewBox="0 0 26 13" fill="none"><rect x="1" y="1" width="21" height="11" rx="3" stroke="#1A1815" stroke-width="1.3"/><rect x="3" y="3" width="15" height="7" rx="1.5" fill="#1A1815"/><rect x="23" y="4" width="2" height="5" rx="1" fill="#1A1815"/></svg></span></div>
+        <div style="flex:1;overflow:hidden;padding:6px 18px 0;display:flex;flex-direction:column">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="eyebrow">Build</div><h1 class="h1" style="font-size:26px">New workout</h1></div><span style="background:#1A1815;color:#fff;font-weight:600;font-size:13px;padding:9px 15px;border-radius:10px;margin-top:12px">Save</span></div>
+          <div style="background:#F7F4EE;border-radius:11px;padding:12px 14px;font-size:18px;font-weight:600;color:#1A1815;margin:15px 0 12px">Push Day A</div>
+          <div style="display:flex;gap:8px;margin-bottom:16px"><span class="chip on">Strength</span><span class="chip">Hypertrophy</span><span class="chip">Power</span></div>
+          <div style="font-size:12px;font-weight:700;color:#A39C90;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">Exercises · 3</div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:center;gap:11px;padding:10px 11px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:11px"><svg width="12" height="14" viewBox="0 0 12 16" fill="#CFC6B6"><circle cx="3" cy="3" r="1.5"/><circle cx="9" cy="3" r="1.5"/><circle cx="3" cy="8" r="1.5"/><circle cx="9" cy="8" r="1.5"/><circle cx="3" cy="13" r="1.5"/><circle cx="9" cy="13" r="1.5"/></svg><div style="width:30px;height:30px;border-radius:8px;background:#5f5170;flex:none"></div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#1A1815;line-height:1.15">Barbell Bench Press</div><div style="font-size:11px;color:#948E82">Chest</div></div><div style="display:flex;gap:5px"><div style="text-align:center;background:#F7F4EE;border-radius:7px;padding:4px 8px"><div style="font-size:9px;color:#A39C90">Sets</div><div style="font-size:12px;font-weight:700;color:#1A1815">4</div></div><div style="text-align:center;background:#F7F4EE;border-radius:7px;padding:4px 8px"><div style="font-size:9px;color:#A39C90">Reps</div><div style="font-size:12px;font-weight:700;color:#1A1815">8–10</div></div></div></div>
+            <div style="display:flex;align-items:center;gap:11px;padding:10px 11px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:11px"><svg width="12" height="14" viewBox="0 0 12 16" fill="#CFC6B6"><circle cx="3" cy="3" r="1.5"/><circle cx="9" cy="3" r="1.5"/><circle cx="3" cy="8" r="1.5"/><circle cx="9" cy="8" r="1.5"/><circle cx="3" cy="13" r="1.5"/><circle cx="9" cy="13" r="1.5"/></svg><div style="width:30px;height:30px;border-radius:8px;background:#8c6330;flex:none"></div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#1A1815;line-height:1.15">Incline DB Press</div><div style="font-size:11px;color:#948E82">Chest · Shoulders</div></div><div style="display:flex;gap:5px"><div style="text-align:center;background:#F7F4EE;border-radius:7px;padding:4px 8px"><div style="font-size:9px;color:#A39C90">Sets</div><div style="font-size:12px;font-weight:700;color:#1A1815">3</div></div><div style="text-align:center;background:#F7F4EE;border-radius:7px;padding:4px 8px"><div style="font-size:9px;color:#A39C90">Reps</div><div style="font-size:12px;font-weight:700;color:#1A1815">10–12</div></div></div></div>
+            <div style="display:flex;align-items:center;gap:11px;padding:10px 11px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:11px"><svg width="12" height="14" viewBox="0 0 12 16" fill="#CFC6B6"><circle cx="3" cy="3" r="1.5"/><circle cx="9" cy="3" r="1.5"/><circle cx="3" cy="8" r="1.5"/><circle cx="9" cy="8" r="1.5"/><circle cx="3" cy="13" r="1.5"/><circle cx="9" cy="13" r="1.5"/></svg><div style="width:30px;height:30px;border-radius:8px;background:#95482a;flex:none"></div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#1A1815;line-height:1.15">Overhead Press</div><div style="font-size:11px;color:#948E82">Shoulders</div></div><div style="display:flex;gap:5px"><div style="text-align:center;background:#F7F4EE;border-radius:7px;padding:4px 8px"><div style="font-size:9px;color:#A39C90">Sets</div><div style="font-size:12px;font-weight:700;color:#1A1815">4</div></div><div style="text-align:center;background:#F7F4EE;border-radius:7px;padding:4px 8px"><div style="font-size:9px;color:#A39C90">Reps</div><div style="font-size:12px;font-weight:700;color:#1A1815">6–8</div></div></div></div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;border:1.5px dashed #D3CABA;border-radius:11px;color:#8A857C;font-weight:600;font-size:13.5px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A857C" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add exercise</div>
+          </div>
+        </div>
+        <div class="btabs">
+          <div class="btab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>This Week</div>
+          <div class="btab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg>Workouts</div>
+          <div class="btab on"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Build</div>
+          <div class="btab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>History</div>
+        </div>
+      </div></div>
+    </div>
+    <!-- ============ 1g : EXERCISE detail ============ -->
+    <div class="dv-opt" id="1g">
+      <div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a>Exercise detail — video demo + how-to steps</div>
+      <div class="win">
+        <div class="winbar"><span class="tl" style="background:#F0645A"></span><span class="tl" style="background:#F6BE4F"></span><span class="tl" style="background:#5FC454"></span>
+          <div class="urlpill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#B4AC9E" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>reps.app/exercise</div>
+        </div>
+        <div class="body">
+          <div class="side">
+            <div class="brand"><div class="logo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg></div><span style="font-size:17px;font-weight:700;color:#1A1815">Reps</span></div>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg>Workouts</div>
+              <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Build</div>
+              <div class="navi on"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Exercises</div>
+              <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>History</div>
+            </div>
+            <div style="margin-top:auto;display:flex;align-items:center;gap:11px;padding:12px 8px 2px;border-top:1px solid rgba(0,0,0,.06)">
+              <div style="width:34px;height:34px;border-radius:50%;background:#E7DFD2;display:flex;align-items:center;justify-content:center;font-weight:700;color:#8A7A5F;font-size:14px">A</div>
+              <div><div style="font-size:13.5px;font-weight:600;color:#1A1815">My Training</div><div style="font-size:12px;color:#A39C90">8 workouts</div></div>
+            </div>
+          </div>
+          <div class="main">
+            <div style="padding:28px 36px 0;height:100%;overflow:hidden">
+              <div style="font-size:13px;color:#948E82;font-weight:600;margin-bottom:16px">← Push Day A</div>
+              <div style="display:flex;gap:30px">
+                <div style="flex:1.35;min-width:0">
+                  <div style="position:relative;width:100%;height:328px;border-radius:15px;overflow:hidden;background:#EDE7DD">
+                    <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="benchvid" shape="rect" placeholder="Drop a demo clip / thumbnail" hint-size="100%,100%">
+                    </x-import>
+                    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none"><div style="width:66px;height:66px;border-radius:50%;background:rgba(20,16,12,.55);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px)"><svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l12-7z"/></svg></div></div>
+                    <div style="position:absolute;bottom:14px;right:14px;background:rgba(20,16,12,.6);color:#fff;font-size:12px;font-weight:600;padding:4px 10px;border-radius:7px;pointer-events:none">0:45</div>
+                  </div>
+                  <h1 class="h1" style="font-size:30px;margin-top:20px">Barbell Bench Press</h1>
+                  <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><span class="pill" style="background:#EDE7DD">Chest</span><span class="pill" style="background:#EDE7DD">Triceps</span><span class="pill" style="background:#EDE7DD">Front delts</span><span class="pill" style="background:#EDE7DD">Barbell</span><span class="pill" style="background:#EDE7DD">Intermediate</span></div>
+                </div>
+                <div style="width:320px;flex:none">
+                  <div style="font-size:13px;font-weight:700;letter-spacing:.04em;color:#A39C90;text-transform:uppercase;margin-bottom:14px">How to</div>
+                  <div style="display:flex;flex-direction:column;gap:15px">
+                    <div style="display:flex;gap:12px"><div style="width:24px;height:24px;border-radius:50%;background:#1A1815;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none">1</div><div style="font-size:13.5px;line-height:1.5;color:#4A453D">Lie flat, feet planted. Grip the bar slightly wider than shoulder-width.</div></div>
+                    <div style="display:flex;gap:12px"><div style="width:24px;height:24px;border-radius:50%;background:#1A1815;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none">2</div><div style="font-size:13.5px;line-height:1.5;color:#4A453D">Unrack and hold the bar over your chest with arms straight.</div></div>
+                    <div style="display:flex;gap:12px"><div style="width:24px;height:24px;border-radius:50%;background:#1A1815;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none">3</div><div style="font-size:13.5px;line-height:1.5;color:#4A453D">Lower under control to mid-chest, elbows ~45°.</div></div>
+                    <div style="display:flex;gap:12px"><div style="width:24px;height:24px;border-radius:50%;background:#1A1815;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none">4</div><div style="font-size:13.5px;line-height:1.5;color:#4A453D">Press back up, driving through the mid-foot. Lock out at the top.</div></div>
+                  </div>
+                  <div style="margin-top:20px;background:#F4EEE6;border-radius:12px;padding:14px 16px"><div style="font-size:12px;font-weight:700;color:#B15834;margin-bottom:5px">IN THIS WORKOUT</div><div style="font-size:15px;font-weight:700;color:#1A1815">4 sets × 8–10 reps · 90s rest</div><div style="font-size:12.5px;color:#948E82;margin-top:4px">Last time: 140 lb × 8</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1k">
+      <div class="dv-olabel"><a class="dv-oid" href="#1k">1k</a>Exercise detail — phone</div>
+      <div class="phone"><div class="pscreen">
+        <div class="notch"></div>
+        <div class="status"><span>9:41</span><span style="display:flex;align-items:center;gap:5px"><svg width="17" height="11" viewBox="0 0 24 16" fill="#1A1815"><rect x="0" y="9" width="4" height="7" rx="1"/><rect x="6" y="6" width="4" height="10" rx="1"/><rect x="12" y="3" width="4" height="13" rx="1"/><rect x="18" y="0" width="4" height="16" rx="1"/></svg><svg width="22" height="11" viewBox="0 0 26 13" fill="none"><rect x="1" y="1" width="21" height="11" rx="3" stroke="#1A1815" stroke-width="1.3"/><rect x="3" y="3" width="15" height="7" rx="1.5" fill="#1A1815"/><rect x="23" y="4" width="2" height="5" rx="1" fill="#1A1815"/></svg></span></div>
+        <div style="flex:1;overflow:hidden;padding:6px 18px 0">
+          <div style="font-size:13px;color:#948E82;font-weight:600;margin-bottom:12px">← Push Day A</div>
+          <div style="position:relative;width:100%;height:186px;border-radius:13px;overflow:hidden;background:#EDE7DD">
+            <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="benchvid_phone" shape="rect" placeholder="Drop a demo clip" hint-size="100%,100%"></x-import>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none"><div style="width:54px;height:54px;border-radius:50%;background:rgba(20,16,12,.55);display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M7 5v14l12-7z"/></svg></div></div>
+            <div style="position:absolute;bottom:11px;right:11px;background:rgba(20,16,12,.6);color:#fff;font-size:11px;font-weight:600;padding:3px 9px;border-radius:6px;pointer-events:none">0:45</div>
+          </div>
+          <h1 class="h1" style="font-size:24px;margin-top:16px">Barbell Bench Press</h1>
+          <div style="display:flex;gap:7px;margin-top:12px;flex-wrap:wrap"><span class="pill" style="background:#EDE7DD">Chest</span><span class="pill" style="background:#EDE7DD">Triceps</span><span class="pill" style="background:#EDE7DD">Front delts</span><span class="pill" style="background:#EDE7DD">Barbell</span></div>
+          <div style="font-size:12px;font-weight:700;letter-spacing:.04em;color:#A39C90;text-transform:uppercase;margin:20px 0 13px">How to</div>
+          <div style="display:flex;flex-direction:column;gap:13px">
+            <div style="display:flex;gap:11px"><div style="width:22px;height:22px;border-radius:50%;background:#1A1815;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none">1</div><div style="font-size:12.5px;line-height:1.45;color:#4A453D">Lie flat, feet planted. Grip the bar slightly wider than shoulder-width.</div></div>
+            <div style="display:flex;gap:11px"><div style="width:22px;height:22px;border-radius:50%;background:#1A1815;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none">2</div><div style="font-size:12.5px;line-height:1.45;color:#4A453D">Unrack and hold the bar over your chest with arms straight.</div></div>
+            <div style="display:flex;gap:11px"><div style="width:22px;height:22px;border-radius:50%;background:#1A1815;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none">3</div><div style="font-size:12.5px;line-height:1.45;color:#4A453D">Lower under control to mid-chest, elbows ~45°.</div></div>
+            <div style="display:flex;gap:11px"><div style="width:22px;height:22px;border-radius:50%;background:#1A1815;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none">4</div><div style="font-size:12.5px;line-height:1.45;color:#4A453D">Press back up, driving through the mid-foot. Lock out at the top.</div></div>
+          </div>
+          <div style="margin-top:18px;background:#F4EEE6;border-radius:12px;padding:13px 15px"><div style="font-size:11px;font-weight:700;color:#B15834;margin-bottom:4px">IN THIS WORKOUT</div><div style="font-size:14px;font-weight:700;color:#1A1815">4 sets × 8–10 reps · 90s rest</div><div style="font-size:12px;color:#948E82;margin-top:3px">Last time: 140 lb × 8</div></div>
+        </div>
+        <div class="btabs">
+          <div class="btab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>This Week</div>
+          <div class="btab on"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg>Workouts</div>
+          <div class="btab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Build</div>
+          <div class="btab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>History</div>
+        </div>
+      </div></div>
+    </div>
+    <!-- ============ 1h : HISTORY / progress ============ -->
+    <div class="dv-opt" id="1h">
+      <div class="dv-olabel"><a class="dv-oid" href="#1h">1h</a>History / progress (desktop)</div>
+      <div class="win">
+        <div class="winbar"><span class="tl" style="background:#F0645A"></span><span class="tl" style="background:#F6BE4F"></span><span class="tl" style="background:#5FC454"></span>
+          <div class="urlpill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#B4AC9E" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>reps.app/history</div>
+        </div>
+        <div class="body">
+          <div class="side">
+            <div class="brand"><div class="logo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg></div><span style="font-size:17px;font-weight:700;color:#1A1815">Reps</span></div>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg>Workouts</div>
+              <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Build</div>
+              <div class="navi"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Exercises</div>
+              <div class="navi on"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>History</div>
+            </div>
+            <div style="margin-top:auto;display:flex;align-items:center;gap:11px;padding:12px 8px 2px;border-top:1px solid rgba(0,0,0,.06)">
+              <div style="width:34px;height:34px;border-radius:50%;background:#E7DFD2;display:flex;align-items:center;justify-content:center;font-weight:700;color:#8A7A5F;font-size:14px">A</div>
+              <div><div style="font-size:13.5px;font-weight:600;color:#1A1815">My Training</div><div style="font-size:12px;color:#A39C90">8 workouts</div></div>
+            </div>
+          </div>
+          <div class="main">
+            <div style="padding:34px 38px 0;height:100%;overflow:hidden">
+              <div class="eyebrow">Progress</div><h1 class="h1">History</h1>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:24px 0 26px">
+                <div style="background:#F7F4EE;border-radius:13px;padding:18px"><div style="font-size:13px;color:#A39C90;font-weight:600">This month</div><div style="font-size:28px;font-weight:700;color:#1A1815;margin-top:4px">14 <span style="font-size:14px;color:#948E82;font-weight:500">workouts</span></div></div>
+                <div style="background:#F7F4EE;border-radius:13px;padding:18px"><div style="font-size:13px;color:#A39C90;font-weight:600">Total volume</div><div style="font-size:28px;font-weight:700;color:#1A1815;margin-top:4px">82.4k <span style="font-size:14px;color:#948E82;font-weight:500">lb</span></div></div>
+                <div style="background:#F7F4EE;border-radius:13px;padding:18px"><div style="font-size:13px;color:#A39C90;font-weight:600">Current streak</div><div style="font-size:28px;font-weight:700;color:#B15834;margin-top:4px">6 <span style="font-size:14px;color:#948E82;font-weight:500">days</span></div></div>
+                <div style="background:#F7F4EE;border-radius:13px;padding:18px"><div style="font-size:13px;color:#A39C90;font-weight:600">PRs this month</div><div style="font-size:28px;font-weight:700;color:#1A1815;margin-top:4px">3</div></div>
+              </div>
+              <div style="display:flex;gap:26px">
+                <div style="flex:1;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:15px;padding:20px 22px">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:20px"><div style="font-size:15px;font-weight:700;color:#1A1815">Weekly volume</div><div style="font-size:12.5px;color:#948E82">last 8 weeks · lb</div></div>
+                  <div style="display:flex;align-items:flex-end;gap:14px;height:150px">
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end"><div style="width:100%;height:52%;background:#E3D7C4;border-radius:7px 7px 3px 3px"></div><span style="font-size:11px;color:#B4AC9E">W1</span></div>
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end"><div style="width:100%;height:64%;background:#E3D7C4;border-radius:7px 7px 3px 3px"></div><span style="font-size:11px;color:#B4AC9E">W2</span></div>
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end"><div style="width:100%;height:48%;background:#E3D7C4;border-radius:7px 7px 3px 3px"></div><span style="font-size:11px;color:#B4AC9E">W3</span></div>
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end"><div style="width:100%;height:72%;background:#E3D7C4;border-radius:7px 7px 3px 3px"></div><span style="font-size:11px;color:#B4AC9E">W4</span></div>
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end"><div style="width:100%;height:66%;background:#E3D7C4;border-radius:7px 7px 3px 3px"></div><span style="font-size:11px;color:#B4AC9E">W5</span></div>
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end"><div style="width:100%;height:80%;background:#E3D7C4;border-radius:7px 7px 3px 3px"></div><span style="font-size:11px;color:#B4AC9E">W6</span></div>
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end"><div style="width:100%;height:75%;background:#E3D7C4;border-radius:7px 7px 3px 3px"></div><span style="font-size:11px;color:#B4AC9E">W7</span></div>
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end"><div style="width:100%;height:94%;background:#B15834;border-radius:7px 7px 3px 3px"></div><span style="font-size:11px;color:#1A1815;font-weight:600">W8</span></div>
+                  </div>
+                </div>
+                <div style="width:330px;flex:none">
+                  <div style="font-size:15px;font-weight:700;color:#1A1815;margin-bottom:14px">Recent sessions</div>
+                  <div style="display:flex;flex-direction:column;gap:11px">
+                    <div style="display:flex;align-items:center;gap:13px;padding:13px 15px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px"><div style="width:38px;height:38px;border-radius:9px;background:#5f5170;flex:none"></div><div style="flex:1"><div style="font-size:14px;font-weight:600;color:#1A1815">Push Day A</div><div style="font-size:12px;color:#948E82">Today · 52 min · 24 sets</div></div><span style="font-size:11px;font-weight:700;color:#567a3e;background:#EBF0E3;padding:4px 9px;border-radius:7px">+5 lb PR</span></div>
+                    <div style="display:flex;align-items:center;gap:13px;padding:13px 15px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px"><div style="width:38px;height:38px;border-radius:9px;background:#567a3e;flex:none"></div><div style="flex:1"><div style="font-size:14px;font-weight:600;color:#1A1815">Leg Day</div><div style="font-size:12px;color:#948E82">Sun · 61 min · 18 sets</div></div></div>
+                    <div style="display:flex;align-items:center;gap:13px;padding:13px 15px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px"><div style="width:38px;height:38px;border-radius:9px;background:#b0803f;flex:none"></div><div style="flex:1"><div style="font-size:14px;font-weight:600;color:#1A1815">Pull Day A</div><div style="font-size:12px;color:#948E82">Fri · 48 min · 21 sets</div></div></div>
+                    <div style="display:flex;align-items:center;gap:13px;padding:13px 15px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:12px"><div style="width:38px;height:38px;border-radius:9px;background:#b64436;flex:none"></div><div style="flex:1"><div style="font-size:14px;font-weight:600;color:#1A1815">5K Interval Run</div><div style="font-size:12px;color:#948E82">Thu · 34 min · 4.9 km</div></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-opt" id="1l">
+      <div class="dv-olabel"><a class="dv-oid" href="#1l">1l</a>History / progress — phone</div>
+      <div class="phone"><div class="pscreen">
+        <div class="notch"></div>
+        <div class="status"><span>9:41</span><span style="display:flex;align-items:center;gap:5px"><svg width="17" height="11" viewBox="0 0 24 16" fill="#1A1815"><rect x="0" y="9" width="4" height="7" rx="1"/><rect x="6" y="6" width="4" height="10" rx="1"/><rect x="12" y="3" width="4" height="13" rx="1"/><rect x="18" y="0" width="4" height="16" rx="1"/></svg><svg width="22" height="11" viewBox="0 0 26 13" fill="none"><rect x="1" y="1" width="21" height="11" rx="3" stroke="#1A1815" stroke-width="1.3"/><rect x="3" y="3" width="15" height="7" rx="1.5" fill="#1A1815"/><rect x="23" y="4" width="2" height="5" rx="1" fill="#1A1815"/></svg></span></div>
+        <div style="flex:1;overflow:hidden;padding:6px 18px 0">
+          <div><div class="eyebrow">Progress</div><h1 class="h1" style="font-size:29px">History</h1></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:15px 0 16px">
+            <div style="background:#F7F4EE;border-radius:12px;padding:14px 15px"><div style="font-size:11.5px;color:#A39C90;font-weight:600">This month</div><div style="font-size:22px;font-weight:700;color:#1A1815;margin-top:3px">14 <span style="font-size:12px;color:#948E82;font-weight:500">workouts</span></div></div>
+            <div style="background:#F7F4EE;border-radius:12px;padding:14px 15px"><div style="font-size:11.5px;color:#A39C90;font-weight:600">Total volume</div><div style="font-size:22px;font-weight:700;color:#1A1815;margin-top:3px">82.4k <span style="font-size:12px;color:#948E82;font-weight:500">lb</span></div></div>
+            <div style="background:#F7F4EE;border-radius:12px;padding:14px 15px"><div style="font-size:11.5px;color:#A39C90;font-weight:600">Streak</div><div style="font-size:22px;font-weight:700;color:#B15834;margin-top:3px">6 <span style="font-size:12px;color:#948E82;font-weight:500">days</span></div></div>
+            <div style="background:#F7F4EE;border-radius:12px;padding:14px 15px"><div style="font-size:11.5px;color:#A39C90;font-weight:600">PRs</div><div style="font-size:22px;font-weight:700;color:#1A1815;margin-top:3px">3 <span style="font-size:12px;color:#948E82;font-weight:500">this month</span></div></div>
+          </div>
+          <div style="background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:14px;padding:15px 16px;margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px"><div style="font-size:14px;font-weight:700;color:#1A1815">Weekly volume</div><div style="font-size:11px;color:#948E82">8 wks · lb</div></div>
+            <div style="display:flex;align-items:flex-end;gap:8px;height:104px"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end"><div style="width:100%;height:52%;background:#E3D7C4;border-radius:5px 5px 2px 2px"></div><span style="font-size:9px;color:#B4AC9E;font-weight:400">W1</span></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end"><div style="width:100%;height:64%;background:#E3D7C4;border-radius:5px 5px 2px 2px"></div><span style="font-size:9px;color:#B4AC9E;font-weight:400">W2</span></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end"><div style="width:100%;height:48%;background:#E3D7C4;border-radius:5px 5px 2px 2px"></div><span style="font-size:9px;color:#B4AC9E;font-weight:400">W3</span></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end"><div style="width:100%;height:72%;background:#E3D7C4;border-radius:5px 5px 2px 2px"></div><span style="font-size:9px;color:#B4AC9E;font-weight:400">W4</span></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end"><div style="width:100%;height:66%;background:#E3D7C4;border-radius:5px 5px 2px 2px"></div><span style="font-size:9px;color:#B4AC9E;font-weight:400">W5</span></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end"><div style="width:100%;height:80%;background:#E3D7C4;border-radius:5px 5px 2px 2px"></div><span style="font-size:9px;color:#B4AC9E;font-weight:400">W6</span></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end"><div style="width:100%;height:75%;background:#E3D7C4;border-radius:5px 5px 2px 2px"></div><span style="font-size:9px;color:#B4AC9E;font-weight:400">W7</span></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end"><div style="width:100%;height:94%;background:#B15834;border-radius:5px 5px 2px 2px"></div><span style="font-size:9px;color:#1A1815;font-weight:700">W8</span></div></div>
+          </div>
+          <div style="font-size:14px;font-weight:700;color:#1A1815;margin-bottom:11px">Recent sessions</div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:center;gap:11px;padding:11px 12px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:11px"><div style="width:34px;height:34px;border-radius:8px;background:#5f5170;flex:none"></div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#1A1815">Push Day A</div><div style="font-size:11.5px;color:#948E82">Today · 52 min · 24 sets</div></div><span style="font-size:10px;font-weight:700;color:#567a3e;background:#EBF0E3;padding:3px 8px;border-radius:6px;white-space:nowrap">+5 lb PR</span></div>
+            <div style="display:flex;align-items:center;gap:11px;padding:11px 12px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:11px"><div style="width:34px;height:34px;border-radius:8px;background:#567a3e;flex:none"></div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#1A1815">Leg Day</div><div style="font-size:11.5px;color:#948E82">Sun · 61 min · 18 sets</div></div></div>
+            <div style="display:flex;align-items:center;gap:11px;padding:11px 12px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:11px"><div style="width:34px;height:34px;border-radius:8px;background:#b0803f;flex:none"></div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#1A1815">Pull Day A</div><div style="font-size:11.5px;color:#948E82">Fri · 48 min · 21 sets</div></div></div>
+          </div>
+        </div>
+        <div class="btabs">
+          <div class="btab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>This Week</div>
+          <div class="btab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg>Workouts</div>
+          <div class="btab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Build</div>
+          <div class="btab on"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>History</div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+  <p class="dv-next">Try next: "wire up <a class="dv-oid" href="#1a">1a</a> as a working prototype" · "make the cards use photo thumbnails" · "add a rest-timer + supersets to <a class="dv-oid" href="#1e">1e</a>" · "add phone versions of these screens"</p>
+</section>
+</x-dc>
+</body>
+</html>
