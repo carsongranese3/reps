@@ -86,6 +86,7 @@ const TABLES = {
         favorite     INTEGER NOT NULL DEFAULT 0,
         est_minutes  INTEGER NOT NULL DEFAULT 0,
         image        TEXT,
+        gym_id       TEXT,
         exercises    TEXT NOT NULL DEFAULT '[]',
         created_at   TEXT NOT NULL,
         updated_at   TEXT NOT NULL
@@ -99,6 +100,7 @@ const TABLES = {
       favorite: 'INTEGER NOT NULL DEFAULT 0',
       est_minutes: 'INTEGER NOT NULL DEFAULT 0',
       image: 'TEXT',
+      gym_id: 'TEXT',
       exercises: "TEXT NOT NULL DEFAULT '[]'",
       created_at: 'TEXT',
       updated_at: 'TEXT',

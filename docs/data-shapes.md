@@ -51,6 +51,7 @@ A designed workout.
 | `favorite` | INTEGER (0/1) | |
 | `est_minutes` | INTEGER | **always server-computed**, never trusted from the client — decision #11 |
 | `image` | TEXT | nullable |
+| `gym_id` | TEXT, nullable | assigns the workout to a gym (decision #18). `NULL` = **"Any gym"** — the generic default, not a real gym row, applies no filtering. **No FK enforcement**: an unknown/dangling `gym_id` (e.g. its gym was deleted) is stored and returned as-is; the client treats any `gym_id` that doesn't resolve to a real gym as "Any gym" |
 | `exercises` | TEXT (JSON array) | ordered `[{ exercise_id, sets, reps, rest }]` — `reps` is a number or a range string (`"8-10"`); `rest` is seconds |
 | `created_at` / `updated_at` | TEXT | ISO datetime |
 
@@ -191,6 +192,7 @@ that produce them.
   "favorite": false,
   "est_minutes": 55,
   "image": null,
+  "gym_id": null, // decision #18 — null = "Any gym"; no FK, an unknown id is treated as Any gym client-side
   "exercises": [
     { "exercise_id": "uuid", "sets": 4, "reps": "8-10", "rest": 90 }
   ],

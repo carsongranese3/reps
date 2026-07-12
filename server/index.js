@@ -285,9 +285,9 @@ app.post('/api/workouts', (req, res) => {
   const ts = nowIso();
   const est_minutes = computeEstMinutes(body.exercises);
   db.prepare(
-    `INSERT INTO workouts (id, title, type, category, favorite, est_minutes, image, exercises, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(id, body.title, body.type, body.category, body.favorite ? 1 : 0, est_minutes, body.image, JSON.stringify(body.exercises), ts, ts);
+    `INSERT INTO workouts (id, title, type, category, favorite, est_minutes, image, gym_id, exercises, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(id, body.title, body.type, body.category, body.favorite ? 1 : 0, est_minutes, body.image, body.gym_id, JSON.stringify(body.exercises), ts, ts);
 
   const row = db.prepare('SELECT * FROM workouts WHERE id = ?').get(id);
   res.status(201).json(rowToWorkout(row));
@@ -304,9 +304,9 @@ app.put('/api/workouts/:id', (req, res) => {
   const ts = nowIso();
   const est_minutes = computeEstMinutes(body.exercises);
   db.prepare(
-    `UPDATE workouts SET title = ?, type = ?, category = ?, favorite = ?, est_minutes = ?, image = ?, exercises = ?, updated_at = ?
+    `UPDATE workouts SET title = ?, type = ?, category = ?, favorite = ?, est_minutes = ?, image = ?, gym_id = ?, exercises = ?, updated_at = ?
      WHERE id = ?`
-  ).run(body.title, body.type, body.category, body.favorite ? 1 : 0, est_minutes, body.image, JSON.stringify(body.exercises), ts, req.params.id);
+  ).run(body.title, body.type, body.category, body.favorite ? 1 : 0, est_minutes, body.image, body.gym_id, JSON.stringify(body.exercises), ts, req.params.id);
 
   const row = db.prepare('SELECT * FROM workouts WHERE id = ?').get(req.params.id);
   res.json(rowToWorkout(row));

@@ -169,6 +169,9 @@ Body:
   "category": "Push",                     // optional, default "Strength"; must be Strength|Push|Pull|Legs|Cardio|Mobility if present
   "favorite": false,                      // optional
   "image": null,                          // optional
+  "gym_id": null,                         // optional, default null — assigns the workout to a gym
+                                           //   (decision #18); null = "Any gym". Not validated
+                                           //   against existing gyms (no FK) — any string is accepted
   "exercises": [                          // required, length >= 1
     { "exercise_id": "uuid", "sets": 4, "reps": "8-10", "rest": 90 }
   ]
@@ -184,7 +187,9 @@ Update a workout. **Patch semantics**: any field omitted from the body keeps its
 value — this is what lets the Workouts grid's favorite-heart toggle send just
 `{ "favorite": true }` without resending the whole workout. The merged result is re-validated
 against the same rules as `POST` (so you can't patch `title` to empty or `exercises` to `[]`).
-`est_minutes` is recomputed whenever `exercises` changes.
+`est_minutes` is recomputed whenever `exercises` changes. `gym_id` follows the same patch
+semantics: omit it to keep the current value, send `"gym_id": null` to explicitly clear it back to
+"Any gym", or send a gym id string to assign/reassign it (not checked against existing gyms).
 
 Response: `200` → `Workout` (same `id`, never a duplicate) · `400` validation failure ·
 `404` if not found.
@@ -413,6 +418,6 @@ npm install
 cp server/.env.example server/.env   # optional — only needed for the Gemini autofill feature; fill in GEMINI_API_KEY
 npm run seed        # idempotent — seeds exercises/workouts/plan if not already present
 npm run dev:server  # Express API on :4000 (or `npm run dev` to also start the Vite client)
-npm test            # vitest — 97 tests across serialization, CRUD (workouts/exercises/gyms), plan,
+npm test            # vitest — 113 tests across serialization, CRUD (workouts/exercises/gyms), plan,
                      # sessions/PRs, week/streak, Gemini autofill
 ```

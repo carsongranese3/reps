@@ -128,3 +128,61 @@ describe('Workout CRUD + est_minutes', () => {
     expect(after.status).toBe(404);
   });
 });
+
+describe('Workout gym_id (decision #18: nullable, null = "Any gym", no FK enforcement)', () => {
+  it('defaults to null when omitted on create', async () => {
+    const res = await request(ctx.app)
+      .post('/api/workouts')
+      .send({ title: 'No Gym Set', exercises: [{ exercise_id: benchId, sets: 3, reps: 8, rest: 60 }] });
+    expect(res.status).toBe(201);
+    expect(res.body.gym_id).toBeNull();
+  });
+
+  it('round-trips a gym_id through create, get, and list (unknown/dangling id allowed, no FK check)', async () => {
+    const created = await request(ctx.app).post('/api/workouts').send({
+      title: 'Gym Day',
+      gym_id: 'some-gym-id-not-in-db',
+      exercises: [{ exercise_id: benchId, sets: 3, reps: 8, rest: 60 }],
+    });
+    expect(created.status).toBe(201);
+    expect(created.body.gym_id).toBe('some-gym-id-not-in-db');
+    const id = created.body.id;
+
+    const got = await request(ctx.app).get(`/api/workouts/${id}`);
+    expect(got.body.gym_id).toBe('some-gym-id-not-in-db');
+
+    const list = await request(ctx.app).get('/api/workouts');
+    expect(list.body.find((w) => w.id === id).gym_id).toBe('some-gym-id-not-in-db');
+  });
+
+  it('a PUT can set gym_id and later clear it back to null (Any gym)', async () => {
+    const created = await request(ctx.app).post('/api/workouts').send({
+      title: 'Assign Later',
+      exercises: [{ exercise_id: benchId, sets: 3, reps: 8, rest: 60 }],
+    });
+    const id = created.body.id;
+    expect(created.body.gym_id).toBeNull();
+
+    const setRes = await request(ctx.app).put(`/api/workouts/${id}`).send({ gym_id: 'gym-1' });
+    expect(setRes.status).toBe(200);
+    expect(setRes.body.gym_id).toBe('gym-1');
+
+    const clearRes = await request(ctx.app).put(`/api/workouts/${id}`).send({ gym_id: null });
+    expect(clearRes.status).toBe(200);
+    expect(clearRes.body.gym_id).toBeNull();
+  });
+
+  it('a PUT omitting gym_id preserves the existing value (patch semantics)', async () => {
+    const created = await request(ctx.app).post('/api/workouts').send({
+      title: 'Preserve Gym',
+      gym_id: 'gym-keep-me',
+      exercises: [{ exercise_id: benchId, sets: 3, reps: 8, rest: 60 }],
+    });
+    const id = created.body.id;
+
+    const res = await request(ctx.app).put(`/api/workouts/${id}`).send({ favorite: true });
+    expect(res.status).toBe(200);
+    expect(res.body.gym_id).toBe('gym-keep-me');
+    expect(res.body.favorite).toBe(true);
+  });
+});

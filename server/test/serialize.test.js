@@ -160,6 +160,82 @@ describe('workout normalize -> row -> rowToWorkout round trip', () => {
     expect(body.type).toBeNull();
     expect(body.category).toBeNull();
   });
+
+  describe('gym_id (decision #18: null = "Any gym", no FK enforcement)', () => {
+    it('defaults to null on create when omitted', () => {
+      const body = normalizeWorkoutBody({ title: 'X', exercises: [] });
+      expect(body.gym_id).toBeNull();
+    });
+
+    it('trims a provided gym_id and round-trips through rowToWorkout', () => {
+      const body = normalizeWorkoutBody({ title: 'X', gym_id: '  gym-123  ', exercises: [] });
+      expect(body.gym_id).toBe('gym-123');
+
+      const row = {
+        id: 'w1',
+        title: body.title,
+        type: 'Strength',
+        category: 'Strength',
+        favorite: 0,
+        est_minutes: 0,
+        image: null,
+        gym_id: body.gym_id,
+        exercises: JSON.stringify(body.exercises),
+        created_at: 't1',
+        updated_at: 't1',
+      };
+      expect(rowToWorkout(row).gym_id).toBe('gym-123');
+    });
+
+    it('coerces an empty string or missing gym_id to null', () => {
+      expect(normalizeWorkoutBody({ title: 'X', gym_id: '', exercises: [] }).gym_id).toBeNull();
+      expect(normalizeWorkoutBody({ title: 'X', gym_id: '   ', exercises: [] }).gym_id).toBeNull();
+    });
+
+    it('patch semantics: omitting gym_id preserves the existing value', () => {
+      const existingRow = {
+        title: 'Leg Day',
+        type: 'Strength',
+        category: 'Legs',
+        favorite: 0,
+        image: null,
+        gym_id: 'gym-abc',
+        exercises: JSON.stringify([{ exercise_id: 'e1', sets: 3, reps: 8, rest: 60 }]),
+      };
+      const merged = normalizeWorkoutBody({ favorite: true }, existingRow);
+      expect(merged.gym_id).toBe('gym-abc');
+    });
+
+    it('patch semantics: explicitly sending gym_id: null clears it back to Any gym', () => {
+      const existingRow = {
+        title: 'Leg Day',
+        type: 'Strength',
+        category: 'Legs',
+        favorite: 0,
+        image: null,
+        gym_id: 'gym-abc',
+        exercises: JSON.stringify([{ exercise_id: 'e1', sets: 3, reps: 8, rest: 60 }]),
+      };
+      const merged = normalizeWorkoutBody({ gym_id: null }, existingRow);
+      expect(merged.gym_id).toBeNull();
+    });
+
+    it('rowToWorkout defaults a missing gym_id column to null', () => {
+      const row = {
+        id: 'w1',
+        title: 'X',
+        type: 'Strength',
+        category: 'Strength',
+        favorite: 0,
+        est_minutes: 0,
+        image: null,
+        exercises: '[]',
+        created_at: 't1',
+        updated_at: 't1',
+      };
+      expect(rowToWorkout(row).gym_id).toBeNull();
+    });
+  });
 });
 
 describe('gym normalize -> row -> rowToGym round trip', () => {

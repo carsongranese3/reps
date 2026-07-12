@@ -143,9 +143,10 @@ export function normalizeWorkoutBody(body = {}, existing = null) {
         category: existing.category,
         favorite: !!existing.favorite,
         image: existing.image,
+        gym_id: existing.gym_id ?? null,
         exercises: safeParseArray(existing.exercises),
       }
-    : { title: '', type: 'Strength', category: 'Strength', favorite: false, image: null, exercises: [] };
+    : { title: '', type: 'Strength', category: 'Strength', favorite: false, image: null, gym_id: null, exercises: [] };
 
   const title = Object.prototype.hasOwnProperty.call(body, 'title') ? trimOrNull(body.title) ?? '' : base.title;
 
@@ -161,11 +162,15 @@ export function normalizeWorkoutBody(body = {}, existing = null) {
 
   const favorite = Object.prototype.hasOwnProperty.call(body, 'favorite') ? !!body.favorite : base.favorite;
   const image = Object.prototype.hasOwnProperty.call(body, 'image') ? trimOrNull(body.image) : base.image;
+  // gym_id: null = "Any gym" (decision #18) — not a real gym row, no FK enforcement.
+  // Present-in-body applies (including explicit null to clear back to Any gym);
+  // absent-from-body preserves the existing value (patch semantics).
+  const gym_id = Object.prototype.hasOwnProperty.call(body, 'gym_id') ? trimOrNull(body.gym_id) : base.gym_id;
   const exercises = Object.prototype.hasOwnProperty.call(body, 'exercises')
     ? normalizeWorkoutExercises(body.exercises)
     : base.exercises;
 
-  return { title, type, category, favorite, image, exercises };
+  return { title, type, category, favorite, image, gym_id, exercises };
 }
 
 export function rowToWorkout(row) {
@@ -179,6 +184,7 @@ export function rowToWorkout(row) {
     favorite: !!row.favorite,
     est_minutes: row.est_minutes,
     image: row.image,
+    gym_id: row.gym_id ?? null,
     exercises,
     exercise_count: exercises.length,
     created_at: row.created_at,
