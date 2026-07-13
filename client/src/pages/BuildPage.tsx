@@ -272,8 +272,10 @@ export function BuildPage() {
                     key={row._key}
                     draggable
                     onDragStart={() => setDragIndex(i)}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={() => {
+                    onDragEnd={() => setDragIndex(null)}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      // Reorder live as the dragged row passes over another.
                       if (dragIndex === null || dragIndex === i) return;
                       setRows((r) => {
                         const next = [...r];
@@ -281,9 +283,12 @@ export function BuildPage() {
                         next.splice(i, 0, moved);
                         return next;
                       });
-                      setDragIndex(null);
+                      setDragIndex(i);
                     }}
-                    className="flex flex-wrap items-center gap-3 rounded-xl border border-black/[.08] bg-white p-3.5"
+                    onDrop={() => setDragIndex(null)}
+                    className={`flex flex-wrap items-center gap-3 rounded-xl border border-black/[.08] bg-white p-3.5 transition-opacity ${
+                      dragIndex === i ? 'opacity-50' : ''
+                    }`}
                   >
                     <span className="hidden cursor-grab sm:block">
                       <DragIcon />
@@ -356,7 +361,10 @@ export function BuildPage() {
               })}
               <button
                 type="button"
-                onClick={() => setLibraryOpen(true)}
+                onClick={() => {
+                  setLibraryQuery('');
+                  setLibraryOpen(true);
+                }}
                 className="flex items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed border-[#D3CABA] p-3.5 text-sm font-semibold text-[#8A857C] hover:bg-panel/40"
               >
                 <PlusIcon size={17} />
@@ -366,23 +374,16 @@ export function BuildPage() {
           </div>
         </div>
 
-        {/* Desktop library sidebar */}
-        <div className="hidden w-[300px] flex-none flex-col gap-3.5 rounded-2xl border border-black/[.06] bg-sidebar p-4.5 sm:flex">
-          <LibraryPanelContent
-            query={libraryQuery}
-            setQuery={setLibraryQuery}
-            exercises={filteredLibrary}
-            gym={selectedGym}
-            onAdd={addExercise}
-          />
-        </div>
       </div>
 
-      {/* Phone "Add exercise" sheet */}
+      {/* "Add exercise" picker — a bottom sheet on phone, a centered modal on desktop. */}
       {libraryOpen && (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/40 sm:hidden" onClick={() => setLibraryOpen(false)}>
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center"
+          onClick={() => setLibraryOpen(false)}
+        >
           <div
-            className="max-h-[80vh] w-full overflow-y-auto rounded-t-2xl bg-white p-4"
+            className="max-h-[80vh] w-full overflow-y-auto rounded-t-2xl bg-white p-4 sm:max-w-lg sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-black/10" />
@@ -438,31 +439,33 @@ function LibraryPanelContent({
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search exercises"
           aria-label="Search exercises"
+          autoFocus
           className="w-full bg-transparent text-sm text-ink placeholder:text-ink-faint focus:outline-none"
         />
       </label>
-      <div className="flex max-h-[360px] flex-col gap-2.5 overflow-y-auto">
+      <div className="mt-2 flex max-h-[360px] flex-col gap-2.5 overflow-y-auto">
         {exercises.length === 0 && (
           <p className="text-sm text-ink-muted">
             {gym ? `No exercises match ${gym.name}'s equipment.` : 'No exercises found.'}
           </p>
         )}
         {exercises.map((ex) => (
-          <div key={ex.id} className="flex items-center gap-2.5">
+          <button
+            key={ex.id}
+            type="button"
+            onClick={() => onAdd(ex)}
+            aria-label={`Add ${ex.name}`}
+            className="-mx-1 flex items-center gap-2.5 rounded-xl px-1 py-1 text-left hover:bg-panel/60"
+          >
             <ExerciseThumb exercise={ex} className="h-9 w-9 flex-none rounded-lg" iconSize={14} />
             <div className="min-w-0 flex-1">
               <div className="truncate text-[13.5px] font-semibold text-ink">{ex.name}</div>
               <div className="truncate text-xs text-ink-muted">{ex.muscles_worked.join(' · ') || '—'}</div>
             </div>
-            <button
-              type="button"
-              onClick={() => onAdd(ex)}
-              aria-label={`Add ${ex.name}`}
-              className="flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-panel2 text-ink-secondary hover:bg-panel2/70"
-            >
+            <span className="flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-panel2 text-ink-secondary">
               <PlusIcon size={14} />
-            </button>
-          </div>
+            </span>
+          </button>
         ))}
       </div>
     </>

@@ -1,18 +1,20 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useDeleteGym, useGym, useUpdateGym } from '../hooks/useGyms';
+import { useWorkouts } from '../hooks/useWorkouts';
 import { Spinner } from '../components/ui/Spinner';
 import { ErrorState } from '../components/ui/ErrorState';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Chip } from '../components/ui/Chip';
 import { EditIcon, HeartIcon, TrashIcon } from '../components/icons';
-import { gymGradient } from '../lib/category';
+import { categoryColor, gymGradient } from '../lib/category';
 import { ApiError } from '../api';
 
 export function GymDetailPage() {
   const { gymId } = useParams<{ gymId: string }>();
   const navigate = useNavigate();
   const { data: gym, isLoading, isError, error, refetch } = useGym(gymId);
+  const { data: workouts } = useWorkouts();
   const updateGym = useUpdateGym();
   const deleteGym = useDeleteGym();
 
@@ -90,6 +92,37 @@ export function GymDetailPage() {
           ))}
         </div>
       )}
+
+      <h2 className="mb-3 mt-7 text-base font-bold text-ink">Workouts here</h2>
+      {(() => {
+        const gymWorkouts = (workouts ?? []).filter((w) => w.gym_id === gym.id);
+        if (gymWorkouts.length === 0) {
+          return <p className="text-sm text-ink-muted">No workouts assigned to this gym yet.</p>;
+        }
+        return (
+          <div className="flex flex-col gap-2.5">
+            {gymWorkouts.map((w) => (
+              <Link
+                key={w.id}
+                to={`/workouts/${w.id}`}
+                className="flex items-center gap-3 rounded-xl border border-black/[.07] bg-white px-4 py-3 hover:bg-panel/30"
+              >
+                <span
+                  className="h-8 w-8 flex-none rounded-lg"
+                  style={{ backgroundColor: categoryColor(w.category) }}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-semibold text-ink">{w.title}</div>
+                  <div className="truncate text-xs text-ink-muted">
+                    {w.est_minutes} min · {w.exercise_count} exercise
+                    {w.exercise_count === 1 ? '' : 's'} · {w.type}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        );
+      })()}
 
       <ConfirmDialog
         open={confirmDelete}

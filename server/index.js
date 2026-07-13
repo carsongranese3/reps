@@ -197,7 +197,9 @@ app.post('/api/exercises/autofill', async (req, res) => {
   if (!name) return sendError(res, 400, 'name is required');
 
   try {
-    const suggestion = await autofillExercise(name);
+    // Give Gemini the managed equipment list so it picks equipment from it.
+    const equipmentOptions = db.prepare('SELECT name FROM equipment ORDER BY name').all().map((r) => r.name);
+    const suggestion = await autofillExercise(name, equipmentOptions);
     res.json({ suggestion });
   } catch (err) {
     if (err instanceof AutofillError && err.code === 'missing_key') {

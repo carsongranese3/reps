@@ -27,14 +27,20 @@ export class AutofillError extends Error {
   }
 }
 
-function buildPrompt(name) {
+function buildPrompt(name, equipmentOptions = []) {
+  const equipmentLine =
+    equipmentOptions.length > 0
+      ? `"equipment": the equipment this exercise needs — you MUST pick the single best match, spelled EXACTLY, from this list: [${equipmentOptions
+          .map((e) => `"${e}"`)
+          .join(', ')}]. If the exercise needs no equipment use "Bodyweight". Only invent a new short term if truly none of the listed options fit,`
+      : `"equipment": a short common equipment value (e.g. "Barbell", "Dumbbell", "Bodyweight", "Machine"),`;
   return `You are helping populate a personal workout-tracking app's exercise library.
 Given only the exercise name below, respond with ONE JSON object (no prose, no markdown fences)
 with EXACTLY these fields:
 
 {
   "category": one of "Strength" | "Push" | "Pull" | "Legs" | "Cardio" | "Mobility",
-  "equipment": a short common equipment value (e.g. "Barbell", "Dumbbell", "Bodyweight", "Machine"),
+  ${equipmentLine}
   "difficulty": one of "Beginner" | "Intermediate" | "Advanced",
   "muscles_worked": array of 2-5 short muscle group strings (e.g. ["Chest","Triceps"]),
   "how_to": array of 3-6 concise imperative "how to" steps, ordered,
@@ -97,7 +103,7 @@ export function parseAutofillResponse(text) {
 // Calls the Gemini API and returns a validated suggestion object. Throws
 // AutofillError with a `.code` the route can map to a status:
 //   'missing_key' -> 501, 'network' | 'http' | 'parse' -> 502.
-export async function autofillExercise(name) {
+export async function autofillExercise(name, equipmentOptions = []) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new AutofillError('Autofill unavailable — no GEMINI_API_KEY configured', 'missing_key');
@@ -114,7 +120,7 @@ export async function autofillExercise(name) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: buildPrompt(name) }] }],
+        contents: [{ role: 'user', parts: [{ text: buildPrompt(name, equipmentOptions) }] }],
         generationConfig: { responseMimeType: 'application/json' },
       }),
       signal: controller.signal,
