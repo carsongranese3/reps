@@ -44,6 +44,34 @@ function upsertExercise(ex) {
   return id;
 }
 
+// `substitutes` (decision #24) is an optional default one-way "also counts as"
+// list for a seeded equipment name (e.g. Adjustable bench -> ["Bench"]). On a
+// fresh insert it's applied directly; on an existing row it's only BACK-FILLED
+// when the row's own substitutes are currently empty, so a user's own edits are
+// never clobbered by re-seeding.
+function upsertEquipment(name, substitutes = []) {
+  const existing = db.prepare('SELECT id, substitutes FROM equipment WHERE name = ? COLLATE NOCASE').get(name);
+  if (existing) {
+    if (substitutes.length) {
+      const current = JSON.parse(existing.substitutes || '[]');
+      if (!current.length) {
+        db.prepare('UPDATE equipment SET substitutes = ?, updated_at = ? WHERE id = ?').run(
+          JSON.stringify(substitutes),
+          nowIso(),
+          existing.id
+        );
+      }
+    }
+    return existing.id;
+  }
+  const id = crypto.randomUUID();
+  const ts = nowIso();
+  db.prepare(
+    'INSERT INTO equipment (id, name, substitutes, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'
+  ).run(id, name, JSON.stringify(substitutes), ts, ts);
+  return id;
+}
+
 function upsertGym(g) {
   const existing = db.prepare('SELECT id FROM gyms WHERE name = ?').get(g.name);
   if (existing) return existing.id;
@@ -460,6 +488,36 @@ const WORKOUTS = [
   },
 ];
 
+// Curated master equipment list (decision #23) — mirrors the former client-side
+// COMMON_EQUIPMENT constant in client/src/lib/equipment.ts exactly.
+const EQUIPMENT = [
+  'Barbell',
+  'Dumbbells',
+  'Kettlebells',
+  'Cable machine',
+  'Squat rack',
+  'Bench',
+  'Adjustable bench',
+  'Smith machine',
+  'Leg press',
+  'Leg curl machine',
+  'Treadmill',
+  'Rowing machine',
+  'Elliptical',
+  'Pull-up bar',
+  'Dip station',
+  'Resistance bands',
+  'Medicine ball',
+  'Battle ropes',
+];
+
+// Default `substitutes` (decision #24) for specific seeded equipment names —
+// everything else defaults to `[]`. A gym with an Adjustable bench also covers
+// exercises that just need a flat Bench (one-way).
+const EQUIPMENT_SUBSTITUTES = {
+  'Adjustable bench': ['Bench'],
+};
+
 const GYMS = [
   {
     name: 'Home Gym',
@@ -514,6 +572,12 @@ export function seed() {
     gymCount++;
   }
 
+  let equipmentCount = 0;
+  for (const name of EQUIPMENT) {
+    upsertEquipment(name, EQUIPMENT_SUBSTITUTES[name] || []);
+    equipmentCount++;
+  }
+
   // Only fill plan days that are still unset (Rest) — never clobber a user's plan.
   const setIfEmpty = db.prepare('UPDATE plan SET workout_id = ? WHERE day = ? AND workout_id IS NULL');
   for (const [day, title] of Object.entries(PLAN)) {
@@ -525,7 +589,7 @@ export function seed() {
   // No seed sessions — a new user starts with a genuinely empty History (per
   // decision #4 / spec §5).
 
-  console.log(`Seed complete: ${nameToId.size} exercises, ${titleToId.size} workouts, ${gymCount} gyms.`);
+  console.log(`Seed complete: ${nameToId.size} exercises, ${titleToId.size} workouts, ${gymCount} gyms, ${equipmentCount} equipment.`);
 }
 
 const isMain = process.argv[1] && process.argv[1].endsWith('seed.js');

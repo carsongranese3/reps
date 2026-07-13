@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCreateGym, useGym, useUpdateGym } from '../hooks/useGyms';
+import { useEquipmentList } from '../hooks/useEquipment';
 import { Spinner } from '../components/ui/Spinner';
 import { ErrorState } from '../components/ui/ErrorState';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Chip } from '../components/ui/Chip';
 import { HeartIcon, PlusIcon, XIcon } from '../components/icons';
-import { COMMON_EQUIPMENT } from '../lib/equipment';
 import { ApiError } from '../api';
 
 export function GymFormPage() {
@@ -16,6 +16,11 @@ export function GymFormPage() {
   const { data: existing, isLoading, isError, error, refetch } = useGym(gymId);
   const createGym = useCreateGym();
   const updateGym = useUpdateGym();
+  const { data: equipmentList } = useEquipmentList();
+  const managedEquipmentNames = useMemo(
+    () => equipmentList?.map((e) => e.name) ?? [],
+    [equipmentList]
+  );
 
   const [name, setName] = useState('');
   const [favorite, setFavorite] = useState(false);
@@ -35,8 +40,8 @@ export function GymFormPage() {
   }, [isEdit, existing, hydrated]);
 
   const customItems = useMemo(
-    () => equipment.filter((item) => !COMMON_EQUIPMENT.includes(item)),
-    [equipment]
+    () => equipment.filter((item) => !managedEquipmentNames.includes(item)),
+    [equipment, managedEquipmentNames]
   );
 
   const isDirty = useMemo(() => {
@@ -173,7 +178,7 @@ export function GymFormPage() {
             Equipment
           </div>
           <div className="flex flex-wrap gap-2">
-            {COMMON_EQUIPMENT.map((item) => (
+            {managedEquipmentNames.map((item) => (
               <Chip
                 key={item}
                 label={item}
@@ -182,6 +187,11 @@ export function GymFormPage() {
               />
             ))}
           </div>
+          {managedEquipmentNames.length === 0 && (
+            <p className="mt-2 text-xs text-ink-faint">
+              No managed equipment yet — add some from the Equipment tab, or use "Add custom" below.
+            </p>
+          )}
 
           {customItems.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">

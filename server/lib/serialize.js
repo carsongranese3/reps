@@ -278,6 +278,57 @@ export function rowToGym(row) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// equipment (decision #23) — a curated, managed master list. Name-only for now.
+// `partial` merges onto `existing` (patch semantics), mirroring normalizeGymBody.
+// ---------------------------------------------------------------------------
+
+// substitutes (decision #24): the equipment this item "also counts as" — a
+// one-way superset (e.g. Adjustable bench -> ["Bench"]). Same clean-string-array
+// treatment as gym `equipment`: trim, drop empties, dedupe.
+export function normalizeEquipmentBody(body = {}, existing = null) {
+  const base = existing
+    ? {
+        name: existing.name,
+        substitutes: safeParseArray(existing.substitutes),
+        image: existing.image,
+        image_pos: existing.image_pos,
+        image_zoom: existing.image_zoom,
+        image_fit: existing.image_fit,
+      }
+    : { name: '', substitutes: [], image: null, image_pos: null, image_zoom: null, image_fit: null };
+  const name = Object.prototype.hasOwnProperty.call(body, 'name') ? trimOrNull(body.name) ?? '' : base.name;
+  const substitutes = Object.prototype.hasOwnProperty.call(body, 'substitutes')
+    ? dedupeStrings(stringArrayStrict(body.substitutes))
+    : base.substitutes;
+  const image = Object.prototype.hasOwnProperty.call(body, 'image') ? httpUrlOrNull(body.image) : base.image;
+  const image_pos = Object.prototype.hasOwnProperty.call(body, 'image_pos') ? trimOrNull(body.image_pos) : base.image_pos;
+  let image_zoom = base.image_zoom;
+  if (Object.prototype.hasOwnProperty.call(body, 'image_zoom')) {
+    const z = Number(body.image_zoom);
+    image_zoom = Number.isFinite(z) ? Math.min(4, Math.max(0.25, z)) : null;
+  }
+  const image_fit = Object.prototype.hasOwnProperty.call(body, 'image_fit')
+    ? (body.image_fit === 'fill' ? 'fill' : body.image_fit === 'cover' ? 'cover' : null)
+    : base.image_fit;
+  return { name, substitutes, image, image_pos, image_zoom, image_fit };
+}
+
+export function rowToEquipment(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    name: row.name,
+    substitutes: safeParseArray(row.substitutes),
+    image: row.image ?? null,
+    image_pos: row.image_pos ?? null,
+    image_zoom: row.image_zoom ?? null,
+    image_fit: row.image_fit ?? null,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
 export function rowToSession(row) {
   if (!row) return null;
   return {

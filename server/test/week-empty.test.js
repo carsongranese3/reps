@@ -27,6 +27,8 @@ describe('GET /api/week — brand-new user (no plan, no sessions)', () => {
     expect(res.body.total_volume).toBe(0);
     expect(res.body.current_streak).toBe(0);
     expect(res.body.prs_this_month).toBe(0);
-    expect(res.body.weekly_volume.length).toBe(8);
+    // No sessions yet → the chart starts at the current week only (not 8 empty weeks).
+    expect(res.body.weekly_volume.length).toBe(1);
+    expect(res.body.weekly_volume[0].volume).toBe(0);
   });
 });

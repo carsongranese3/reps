@@ -181,3 +181,42 @@ Resolves the Open Questions in `specs/reps.md §7`.
     - **Cross-cutting contract changes (approved):** `GET /api/week` per-day `workout` (single) →
       **`workouts[]`** (array), and `today.workout` → `today.workouts[]`; `DELETE /api/workouts/:id`
       also **deletes** referencing `schedule` rows (never nulls them — NULL means explicit Rest).
+
+22. **History: week drill-down + edit/delete a logged session.**
+    - **Weekly-volume bars become clickable.** Selecting a week highlights it; the right-hand panel
+      switches from "Recent sessions" to **that week's sessions** (the days a workout happened + the
+      workout), same row style. Default selection = the latest week. An empty selected week shows a
+      **"No workouts this week"** state (with the week's date range).
+    - **A session can be edited or deleted.** **Delete** uses the existing `DELETE /api/sessions/:id`
+      (confirm first). **Edit** reopens the logged **sets** (weight × reps, add/remove sets) like the
+      tracking screen; saving recomputes `duration`/`total_sets`/`total_volume` and **PRs**.
+    - **New endpoint `PUT /api/sessions/:id`** — accepts updated `entries` (same shape as POST),
+      recomputes derived totals, and **recomputes this session's PRs against the best of all OTHER
+      sessions** (excluding itself). Keeps the session's `date`/`workout_id` snapshot unless the edit
+      changes them.
+
+23. **Equipment as a managed entity + a new Equipment tab; nav reorder.**
+    - **New `equipment` table/entity**: `{ id, name (unique, required), created_at, updated_at }`
+      (name-only for now). CRUD API `GET/POST /api/equipment`, `GET/PUT/DELETE /api/equipment/:id`.
+      Seeded from the former `COMMON_EQUIPMENT` list. Idempotent migration.
+    - **New Equipment tab**, same look as Exercises: a searchable grid (`/equipment`) of equipment
+      tiles with New / edit / delete. Desktop sidebar item (like Exercises — **not** a phone tab, to
+      avoid crowding; reachable by route on phone).
+    - **The equipment list now feeds the pickers:** the exercise Equipment datalist and the gym
+      equipment checklist source their suggestions from `GET /api/equipment` (+ "Bodyweight" for
+      exercises) instead of the hardcoded constant. Exercises/gyms still **store** equipment as
+      strings (names) — the entity is the curated suggestion source, no relational refactor.
+    - **Nav reorder:** **History moves directly under Schedule.** Desktop sidebar order:
+      This Week · Schedule · History · Gym · Workouts · Exercises · Equipment. Phone tabs:
+      This Week · Schedule · History · Gym · Workouts.
+
+24. **Equipment substitutes ("also counts as") — configurable equipment hierarchy.**
+    - Each `equipment` row gains a **`substitutes` (JSON string[])** field: the equipment this item
+      **also counts as / can replace** (one-way superset). e.g. **Adjustable bench → ["Bench"]** so a
+      gym with an adjustable bench covers any exercise that needs a flat Bench (but not the reverse).
+    - **Editable in the Equipment tab** (a multi-select of other equipment names). Seeded so
+      "Adjustable bench" defaults to substituting "Bench"; back-filled onto the existing row.
+    - **Matching becomes data-driven:** `exerciseDoableAtGym` expands a gym's equipment by each
+      item's `substitutes` (from the managed equipment list) and requires an exact (normalized)
+      match — replacing the old fuzzy substring loose-match. Bodyweight/None always doable; "Any
+      gym" always doable.

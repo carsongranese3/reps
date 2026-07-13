@@ -257,6 +257,69 @@ Response: `200` → `{ "deleted": true, "id": "..." }` · `404` if not found.
 
 ---
 
+## Equipment (decision #23 — a curated, managed master list)
+
+A managed list of gym equipment names that feeds the **suggestion** sources for the exercise
+Equipment datalist and the gym equipment checklist. Exercises and gyms continue to **store**
+equipment as plain free strings (no relational refactor) — deleting an equipment row here never
+touches any exercise/gym; it just stops being suggested.
+
+**Duplicate-name behavior:** names are unique **case-insensitively** (enforced by a
+`COLLATE NOCASE` unique index in `server/db.js`, plus an application-level pre-check). A `POST`/`PUT`
+that would collide with an existing name (any case) returns **`400`** (not `409` — kept consistent
+with every other validation failure in this API, which are all `400`s; there is no `409` usage
+anywhere else in the app).
+
+**`substitutes` (decision #24) — "also counts as":** each item carries a `substitutes: string[]` —
+other equipment names this item **also counts as / can replace**, one-way (e.g. `"Adjustable bench"`
+→ `["Bench"]`: a gym with an adjustable bench satisfies an exercise that needs a flat `Bench`, but
+not the reverse). Cleaned like gym `equipment` — trimmed, blanks dropped, deduped. Consumers (e.g. a
+gym/equipment-matching helper) are expected to expand a gym's equipment list through each item's
+`substitutes` before matching.
+
+### `GET /api/equipment`
+List equipment.
+
+Query params (optional): `q` — case-insensitive substring match on `name`.
+
+Response: `200` → `Equipment[]` (sorted by `name` ascending). Each item includes `substitutes`.
+
+### `GET /api/equipment/:id`
+Response: `200` → `Equipment` · `404` if not found.
+
+### `POST /api/equipment`
+Create an equipment item. **Requires a non-empty `name`.**
+
+Body:
+```jsonc
+{
+  "name": "Adjustable bench",  // required, non-empty after trim
+  "substitutes": ["Bench"]     // optional, string[] — trimmed, deduped, non-string/blank entries
+                                // dropped; defaults to [] if omitted
+}
+```
+
+Response: `201` → `Equipment` · `400` if `name` is empty/whitespace-only, or if an equipment item
+with that name (any case) already exists.
+
+### `PUT /api/equipment/:id`
+Update an equipment item in place (same id, no duplicate). **Patch semantics**: omitting a field
+(`name` or `substitutes`) keeps its current stored value; `name` still can't be patched to blank,
+and can't be patched to collide with another existing item's name (case-insensitive) — patching an
+item to its own unchanged name is fine. Sending `substitutes` **replaces** the whole list (send `[]`
+to clear it).
+
+Response: `200` → `Equipment` · `400` if the merged `name` is empty or collides with another item ·
+`404` if not found.
+
+### `DELETE /api/equipment/:id`
+Deletes the equipment row. **No cascade** — exercises/gyms store equipment as free strings, not a
+foreign key, so nothing else is touched; the deleted name simply stops appearing as a suggestion.
+
+Response: `200` → `{ "deleted": true, "id": "..." }` · `404` if not found.
+
+---
+
 ## Plan (fixed Mon–Sun weekly template)
 
 ### `GET /api/plan`
@@ -393,6 +456,54 @@ Notes:
 Response: `201` → `Session` · `400` no `workout_id` and no `workout_title` · `404` unknown
 `workout_id`.
 
+### `PUT /api/sessions/:id`
+Edit a logged session's sets (decision #22 — History week drill-down "Edit"). Mirrors `POST`'s
+derivation exactly, but every field is **optional** and omitting it keeps the session's current
+stored value — you only need to send what changed (typically just `entries`).
+
+Body:
+```jsonc
+{
+  "entries": [                          // optional — omit to keep the existing entries unchanged
+    {
+      "exercise_id": "uuid",
+      "exercise_name": "Barbell Bench Press", // optional — filled from the library if omitted
+      "sets": [{ "weight": 140, "reps": 8, "completed": true }]
+    }
+  ],
+  "date": "2026-07-08T18:30:00.000Z",   // optional — omit to keep the existing date
+  "duration_sec": 3120,                 // optional — omit to keep the existing duration_sec
+  "started_at": "2026-07-08T17:38:00.000Z", // optional — if paired with ended_at, recomputes duration_sec from the difference (takes priority over duration_sec)
+  "ended_at": "2026-07-08T18:30:00.000Z",
+  "distance_km": null,                  // optional — omit to keep the existing distance_km
+  "workout_id": "uuid",                 // optional — re-points the session at a different workout and
+                                         //   re-snapshots workout_title/workout_category from it; 404 if
+                                         //   that workout_id doesn't exist. Omit to keep the existing
+                                         //   workout_id/workout_title/workout_category snapshot untouched
+                                         //   (the common case — editing sets doesn't touch the workout link)
+  "workout_title": "Push Day A",        // optional — only applied when workout_id is explicitly sent as
+                                         //   null/falsy in the same request (freeform re-label); ignored otherwise
+  "workout_category": "Push"            // optional — same conditions as workout_title
+}
+```
+Notes:
+- **Recomputes exactly like `POST`:** `total_sets` (count of completed sets), `total_volume` (Σ
+  `weight × reps` over completed sets, nulls treated as 0), `duration_sec` (from
+  `started_at`/`ended_at` if both present, else the supplied/omitted `duration_sec`).
+- **PR recompute, excluding self:** `prs` is recomputed for this session's entries against the
+  best weight ever logged for each exercise **across every OTHER session** — this session's own id
+  is excluded from that "prior best" scan. This is deliberately different from `POST` (which
+  compares against literally every session already in the DB, since the new session doesn't exist
+  yet to exclude). The practical effect: re-saving a session's sets unchanged never spuriously
+  gains or loses a PR against itself; raising a weight above every other session's best gains a PR;
+  lowering it back below removes it. Other sessions' `prs` are never touched by this edit (per
+  decision #10, a PR is a historical fact — only the edited session's own `prs` are recomputed).
+- The `workout_id`/`workout_title`/`workout_category` snapshot is left alone unless the body
+  explicitly changes it — editing sets alone never touches the workout link.
+
+Response: `200` → updated `Session` (via the same serialization as `GET`) · `404` if the session
+doesn't exist, or if a supplied `workout_id` doesn't reference an existing workout.
+
 ### `DELETE /api/sessions/:id`
 Not required by the spec's screens, but included for correcting a mis-logged session. Deletes the
 session (no cascading effects — nothing else references a session).
@@ -508,6 +619,7 @@ npm install
 cp server/.env.example server/.env   # optional — only needed for the Gemini autofill feature; fill in GEMINI_API_KEY
 npm run seed        # idempotent — seeds exercises/workouts/plan if not already present
 npm run dev:server  # Express API on :4000 (or `npm run dev` to also start the Vite client)
-npm test            # vitest — 113 tests across serialization, CRUD (workouts/exercises/gyms), plan,
-                     # sessions/PRs, week/streak, Gemini autofill
+npm test            # vitest — 180 tests across serialization, CRUD (workouts/exercises/gyms/equipment),
+                     # plan, sessions/PRs (incl. PUT edit + PR-recompute-excluding-self), week/streak,
+                     # schedule, Gemini autofill, equipment seed idempotency + substitutes backfill
 ```

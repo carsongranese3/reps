@@ -110,6 +110,35 @@ export interface GymInput {
   equipment?: string[];
 }
 
+/** Managed equipment master list (decision #23) — feeds the exercise Equipment
+ * datalist and the gym equipment checklist as a suggestion source. */
+export interface Equipment {
+  id: string;
+  name: string;
+  /** Other equipment names this item "also counts as" (decision #24) — one-way
+   * superset, e.g. "Adjustable bench" -> ["Bench"]. */
+  substitutes: string[];
+  /** Optional cover-photo URL. */
+  image: string | null;
+  /** CSS object-position for the cover crop, e.g. "50% 30%" (null = centered). */
+  image_pos: string | null;
+  /** Cover zoom/scale (null = 1). */
+  image_zoom: number | null;
+  /** How the cover fills the tile: "cover" (crop, default) or "fill" (stretch to fit). */
+  image_fit: 'cover' | 'fill' | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EquipmentInput {
+  name: string;
+  substitutes?: string[];
+  image?: string | null;
+  image_pos?: string | null;
+  image_zoom?: number | null;
+  image_fit?: 'cover' | 'fill' | null;
+}
+
 export interface PlanEntry {
   day: Weekday;
   workout: Workout | null;
@@ -174,6 +203,20 @@ export interface SessionInput {
   ended_at?: string;
   distance_km?: number | null;
   entries: SessionEntry[];
+}
+
+/** PUT /api/sessions/:id body — every field optional; omit to keep the current
+ * stored value (decision #22). Typically only `entries` is sent (edit sets). */
+export interface SessionUpdateInput {
+  entries?: SessionEntry[];
+  date?: string;
+  duration_sec?: number;
+  started_at?: string;
+  ended_at?: string;
+  distance_km?: number | null;
+  workout_id?: string | null;
+  workout_title?: string;
+  workout_category?: string;
 }
 
 export interface WeekDay {

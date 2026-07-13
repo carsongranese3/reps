@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useCreateWorkout, useUpdateWorkout, useWorkout } from '../hooks/useWorkouts';
 import { useExercises } from '../hooks/useExercises';
 import { useGyms } from '../hooks/useGyms';
+import { useEquipmentList } from '../hooks/useEquipment';
 import { Spinner } from '../components/ui/Spinner';
 import { ErrorState } from '../components/ui/ErrorState';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
@@ -11,7 +12,7 @@ import { DragIcon, PlusIcon, SearchIcon } from '../components/icons';
 import { WORKOUT_CATEGORIES, WORKOUT_TYPES } from '../lib/category';
 import { ExerciseThumb } from '../components/ui/ExerciseThumb';
 import { estimateMinutes } from '../lib/estimate';
-import { equipmentNeedsLabel, exerciseDoableAtGym } from '../lib/equipment';
+import { buildSubstitutesMap, equipmentNeedsLabel, exerciseDoableAtGym } from '../lib/equipment';
 import { ApiError } from '../api';
 import type { Exercise, Gym, WorkoutCategory, WorkoutExerciseEntry, WorkoutType } from '../types';
 
@@ -32,6 +33,7 @@ export function BuildPage() {
   const { data: existing, isLoading, isError, error, refetch } = useWorkout(workoutId);
   const { data: library } = useExercises();
   const { data: gyms } = useGyms();
+  const { data: equipmentList } = useEquipmentList();
   const createWorkout = useCreateWorkout();
   const updateWorkout = useUpdateWorkout();
 
@@ -89,9 +91,11 @@ export function BuildPage() {
 
   const liveEstimate = estimateMinutes(rows);
 
+  const substitutesMap = useMemo(() => buildSubstitutesMap(equipmentList), [equipmentList]);
+
   const filteredLibrary = (library ?? [])
     .filter((e) => e.name.toLowerCase().includes(libraryQuery.toLowerCase()))
-    .filter((e) => exerciseDoableAtGym(e, selectedGym));
+    .filter((e) => exerciseDoableAtGym(e, selectedGym, substitutesMap));
 
   function addExercise(ex: Exercise) {
     setRows((r) => [...r, { _key: nextKey(), exercise_id: ex.id, sets: 3, reps: '8-10', rest: 60 }]);
@@ -312,7 +316,7 @@ export function BuildPage() {
                     <div className="min-w-[120px] flex-1">
                       <div className="flex items-center gap-1.5 text-[14.5px] font-semibold text-ink">
                         {ex?.name ?? 'Removed exercise'}
-                        {ex && selectedGym && !exerciseDoableAtGym(ex, selectedGym) && (
+                        {ex && selectedGym && !exerciseDoableAtGym(ex, selectedGym, substitutesMap) && (
                           <span
                             title={`Needs ${equipmentNeedsLabel(ex)} — not available at ${selectedGym.name}`}
                             className="whitespace-nowrap rounded-full bg-status-missedBg px-2 py-0.5 text-[10px] font-semibold text-status-missed"

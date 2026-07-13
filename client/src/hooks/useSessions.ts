@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createSession, getSession, listSessions } from '../api';
-import type { SessionInput } from '../types';
+import { createSession, deleteSession, getSession, listSessions, updateSession } from '../api';
+import type { SessionInput, SessionUpdateInput } from '../types';
 
 export function useSessions(params?: { limit?: number; offset?: number }) {
   return useQuery({
@@ -29,6 +29,35 @@ export function useCreateSession() {
       qc.invalidateQueries({ queryKey: ['stats'] });
       qc.invalidateQueries({ queryKey: ['exercise'] });
       qc.invalidateQueries({ queryKey: ['exercises'] });
+    },
+  });
+}
+
+export function useUpdateSession() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: { id: string; body: SessionUpdateInput }) => updateSession(id, body),
+    onSuccess: (data) => {
+      // Editing a session's sets recomputes totals/PRs, which changes History and
+      // This Week (streak/N-of-M can shift if the workout link changed) too.
+      qc.invalidateQueries({ queryKey: ['session', data.id] });
+      qc.invalidateQueries({ queryKey: ['sessions'] });
+      qc.invalidateQueries({ queryKey: ['stats'] });
+      qc.invalidateQueries({ queryKey: ['week'] });
+      qc.invalidateQueries({ queryKey: ['exercise'] });
+      qc.invalidateQueries({ queryKey: ['exercises'] });
+    },
+  });
+}
+
+export function useDeleteSession() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteSession(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['sessions'] });
+      qc.invalidateQueries({ queryKey: ['stats'] });
+      qc.invalidateQueries({ queryKey: ['week'] });
     },
   });
 }

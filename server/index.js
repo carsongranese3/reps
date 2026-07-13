@@ -23,6 +23,8 @@ import {
   rowToWorkout,
   normalizeGymBody,
   rowToGym,
+  normalizeEquipmentBody,
+  rowToEquipment,
   normalizeSessionEntries,
   rowToSession,
   safeParseArray,
@@ -404,6 +406,111 @@ app.delete('/api/gyms/:id', (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// Equipment (decision #23) — a curated, managed master list. Exercises/gyms
+// still store equipment as free strings; this table is only the suggestion
+// source the client's pickers read from. Deleting a row here never touches
+// exercises/gyms (no cascade, per decision #23).
+// ---------------------------------------------------------------------------
+
+// Case-insensitive duplicate check, excluding `excludeId` (used by PUT so a row
+// doesn't collide with itself). Backed by the DB's own COLLATE NOCASE unique
+// index (db.js) as a defense-in-depth safety net for races.
+function findEquipmentByNameCI(name, excludeId = null) {
+  if (excludeId) {
+    return db.prepare('SELECT id FROM equipment WHERE name = ? COLLATE NOCASE AND id != ?').get(name, excludeId);
+  }
+  return db.prepare('SELECT id FROM equipment WHERE name = ? COLLATE NOCASE').get(name);
+}
+
+app.get('/api/equipment', (req, res) => {
+  const { q } = req.query;
+  let sql = 'SELECT * FROM equipment WHERE 1=1';
+  const params = [];
+  if (q) {
+    sql += ' AND LOWER(name) LIKE ?';
+    params.push(`%${String(q).toLowerCase()}%`);
+  }
+  sql += ' ORDER BY name ASC';
+  const rows = db.prepare(sql).all(...params);
+  res.json(rows.map(rowToEquipment));
+});
+
+app.get('/api/equipment/:id', (req, res) => {
+  const row = db.prepare('SELECT * FROM equipment WHERE id = ?').get(req.params.id);
+  if (!row) return notFound(res, 'Equipment');
+  res.json(rowToEquipment(row));
+});
+
+app.post('/api/equipment', (req, res) => {
+  const body = normalizeEquipmentBody(req.body);
+  if (!body.name) return sendError(res, 400, 'Name is required');
+  if (findEquipmentByNameCI(body.name)) {
+    return sendError(res, 400, `Equipment named "${body.name}" already exists`);
+  }
+
+  const id = newId();
+  const ts = nowIso();
+  try {
+    db.prepare(
+      `INSERT INTO equipment (id, name, substitutes, image, image_pos, image_zoom, image_fit, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(id, body.name, JSON.stringify(body.substitutes), body.image, body.image_pos, body.image_zoom, body.image_fit, ts, ts);
+  } catch (err) {
+    // Defense-in-depth against the DB's own unique index (race with the check above).
+    if (err && err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return sendError(res, 400, `Equipment named "${body.name}" already exists`);
+    }
+    throw err;
+  }
+
+  const row = db.prepare('SELECT * FROM equipment WHERE id = ?').get(id);
+  res.status(201).json(rowToEquipment(row));
+});
+
+app.put('/api/equipment/:id', (req, res) => {
+  const existing = db.prepare('SELECT * FROM equipment WHERE id = ?').get(req.params.id);
+  if (!existing) return notFound(res, 'Equipment');
+
+  const body = normalizeEquipmentBody(req.body, existing);
+  if (!body.name) return sendError(res, 400, 'Name is required');
+  if (findEquipmentByNameCI(body.name, req.params.id)) {
+    return sendError(res, 400, `Equipment named "${body.name}" already exists`);
+  }
+
+  const ts = nowIso();
+  try {
+    db.prepare(
+      'UPDATE equipment SET name = ?, substitutes = ?, image = ?, image_pos = ?, image_zoom = ?, image_fit = ?, updated_at = ? WHERE id = ?'
+    ).run(
+      body.name,
+      JSON.stringify(body.substitutes),
+      body.image,
+      body.image_pos,
+      body.image_zoom,
+      body.image_fit,
+      ts,
+      req.params.id
+    );
+  } catch (err) {
+    if (err && err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return sendError(res, 400, `Equipment named "${body.name}" already exists`);
+    }
+    throw err;
+  }
+
+  const row = db.prepare('SELECT * FROM equipment WHERE id = ?').get(req.params.id);
+  res.json(rowToEquipment(row));
+});
+
+app.delete('/api/equipment/:id', (req, res) => {
+  const existing = db.prepare('SELECT * FROM equipment WHERE id = ?').get(req.params.id);
+  if (!existing) return notFound(res, 'Equipment');
+  db.prepare('DELETE FROM equipment WHERE id = ?').run(req.params.id);
+  // No cascade — exercises/gyms store equipment as free strings, so a deleted
+  // equipment row simply stops being suggested (decision #23).
+  res.json({ deleted: true, id: req.params.id });
+});
+
+// ---------------------------------------------------------------------------
 // Plan (fixed Mon-Sun weekly template)
 // ---------------------------------------------------------------------------
 
@@ -626,6 +733,109 @@ app.post('/api/sessions', (req, res) => {
 
   const row = db.prepare('SELECT * FROM sessions WHERE id = ?').get(id);
   res.status(201).json(rowToSession(row));
+});
+
+// Edit a logged session's sets (decision #22 — History week drill-down edit flow).
+// Mirrors POST's derivation exactly, except: (1) fields the body omits keep their
+// existing stored value rather than reset to a default (patch-ish, but simplest —
+// the workout_id/title/category snapshot is kept unless the body explicitly touches
+// it, per the task); (2) PRs are recomputed against every OTHER session's prior
+// best (this session's id is excluded from the scan) so re-saving unchanged sets
+// never spuriously invents or drops a PR against itself.
+app.put('/api/sessions/:id', (req, res) => {
+  const existing = db.prepare('SELECT * FROM sessions WHERE id = ?').get(req.params.id);
+  if (!existing) return notFound(res, 'Session');
+
+  const body = req.body || {};
+
+  // workout_id/title/category snapshot: keep as-is unless the body explicitly
+  // changes it (mirrors POST's snapshot-at-completion-time behavior).
+  let workout_id = existing.workout_id;
+  let workout_title = existing.workout_title;
+  let workout_category = existing.workout_category;
+  if (Object.prototype.hasOwnProperty.call(body, 'workout_id')) {
+    workout_id = body.workout_id ? String(body.workout_id) : null;
+    if (workout_id) {
+      const workout = db.prepare('SELECT * FROM workouts WHERE id = ?').get(workout_id);
+      if (!workout) return notFound(res, 'Workout');
+      workout_title = workout.title;
+      workout_category = workout.category;
+    } else if (body.workout_title) {
+      workout_title = String(body.workout_title).trim();
+      workout_category = body.workout_category ? String(body.workout_category).trim() : null;
+    }
+  }
+
+  const date = Object.prototype.hasOwnProperty.call(body, 'date') && typeof body.date === 'string'
+    ? body.date
+    : existing.date;
+
+  let duration_sec = existing.duration_sec;
+  if (body.started_at && body.ended_at) {
+    const startedMs = Date.parse(body.started_at);
+    const endedMs = Date.parse(body.ended_at);
+    if (!Number.isNaN(startedMs) && !Number.isNaN(endedMs)) {
+      duration_sec = Math.max(0, Math.round((endedMs - startedMs) / 1000));
+    }
+  } else if (Object.prototype.hasOwnProperty.call(body, 'duration_sec')) {
+    duration_sec = Math.max(0, parseInt(body.duration_sec, 10) || 0);
+  }
+
+  const entries = Object.prototype.hasOwnProperty.call(body, 'entries')
+    ? normalizeSessionEntries(body.entries)
+    : safeParseArray(existing.entries);
+
+  // Fill in exercise_name snapshots from the library when the client omitted them.
+  for (const entry of entries) {
+    if (!entry.exercise_name) {
+      const ex = db.prepare('SELECT name FROM exercises WHERE id = ?').get(entry.exercise_id);
+      entry.exercise_name = ex ? ex.name : 'Unknown exercise';
+    }
+  }
+
+  let total_sets = 0;
+  let total_volume = 0;
+  for (const entry of entries) {
+    for (const set of entry.sets) {
+      if (set.completed) {
+        total_sets++;
+        total_volume += (set.weight || 0) * (set.reps || 0);
+      }
+    }
+  }
+
+  const distance_km = Object.prototype.hasOwnProperty.call(body, 'distance_km')
+    ? (body.distance_km !== null && body.distance_km !== '' ? Number(body.distance_km) : null)
+    : existing.distance_km;
+
+  // Exclude this session from its own "prior best" scan — see decision #22.
+  const priorBestMap = computePriorBestMap(db, req.params.id);
+  const prs = detectPRs(entries, priorBestMap);
+
+  const update = db.transaction(() => {
+    db.prepare(
+      `UPDATE sessions SET
+        workout_id = ?, workout_title = ?, workout_category = ?, date = ?, duration_sec = ?,
+        total_sets = ?, total_volume = ?, distance_km = ?, entries = ?, prs = ?
+       WHERE id = ?`
+    ).run(
+      workout_id,
+      workout_title,
+      workout_category,
+      date,
+      duration_sec,
+      total_sets,
+      Math.round(total_volume * 100) / 100,
+      distance_km,
+      JSON.stringify(entries),
+      JSON.stringify(prs),
+      req.params.id
+    );
+  });
+  update();
+
+  const row = db.prepare('SELECT * FROM sessions WHERE id = ?').get(req.params.id);
+  res.json(rowToSession(row));
 });
 
 app.delete('/api/sessions/:id', (req, res) => {

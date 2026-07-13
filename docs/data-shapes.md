@@ -69,6 +69,22 @@ now — not referenced by `workouts`, `exercises`, or `sessions`, so `DELETE` ha
 | `equipment` | TEXT (JSON `string[]`) | e.g. `["Dumbbells","Pull-up bar"]` — trimmed, deduped, non-string/blank entries dropped on write |
 | `created_at` / `updated_at` | TEXT | ISO datetime |
 
+### `equipment`
+
+A curated, managed master list of gym equipment (decision #23) — feeds the exercise Equipment
+datalist and the gym equipment checklist as **suggestions**. Exercises and gyms continue to store
+equipment as plain free strings (no relational refactor); this table is only the suggestion source,
+so `DELETE` here never touches `exercises`/`gyms` — a deleted name just stops being suggested.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | TEXT PK | `crypto.randomUUID()` |
+| `name` | TEXT | required, **unique case-insensitively** (`COLLATE NOCASE` unique index) |
+| `substitutes` | TEXT (JSON `string[]`) | decision #24 — the equipment this item **also counts as / can replace** (one-way superset), e.g. `"Adjustable bench"` → `["Bench"]` so a gym with an adjustable bench covers exercises needing a flat `Bench` (not the reverse). Trimmed, deduped, non-string/blank entries dropped on write; default `[]` |
+| `created_at` / `updated_at` | TEXT | ISO datetime |
+
+**Index**: `idx_equipment_name` — `UNIQUE (name COLLATE NOCASE)`.
+
 ### `plan`
 
 Fixed **Mon–Sun weekly template** (not date-keyed) — decision #4. One row per weekday, seeded
@@ -114,6 +130,10 @@ A **completed** tracked workout only (decision #5 — in-progress/abandoned sess
 client-side local state and never reach the server). No hard FK to `workouts`, by design, so a
 session survives the deletion of its source workout — see snapshot fields below.
 
+**Editable after creation** (decision #22): `PUT /api/sessions/:id` lets the History week
+drill-down edit a session's logged sets. No schema change — same columns, same shapes. See
+`docs/api.md` for the request contract and the PR-recompute-excluding-self rule.
+
 | Column | Type | Notes |
 |---|---|---|
 | `id` | TEXT PK | |
@@ -130,7 +150,8 @@ session survives the deletion of its source workout — see snapshot fields belo
 | `created_at` | TEXT | ISO datetime, server-set |
 
 **Indexes**: `exercises(name)`, `exercises(category)`, `workouts(category)`, `workouts(favorite)`,
-`sessions(date)`, `sessions(workout_id)`, `gyms(favorite)`, `schedule(date)`.
+`sessions(date)`, `sessions(workout_id)`, `gyms(favorite)`, `schedule(date)`,
+`equipment(name COLLATE NOCASE)` (unique).
 
 **Idempotent boot migration**: on every boot, `server/db.js` reads `PRAGMA table_info` for each
 table and `ALTER TABLE ... ADD COLUMN`s anything missing, so an existing DB upgrades in place
@@ -240,6 +261,18 @@ that produce them.
   "favorite": false,
   "image": null,
   "equipment": ["Dumbbells", "Adjustable bench", "Pull-up bar", "Resistance bands", "Kettlebells"],
+  "created_at": "...",
+  "updated_at": "..."
+}
+```
+
+### Equipment
+
+```jsonc
+{
+  "id": "uuid",
+  "name": "Adjustable bench",
+  "substitutes": ["Bench"], // decision #24 — "also counts as"; one-way, [] for most items
   "created_at": "...",
   "updated_at": "..."
 }
@@ -363,7 +396,14 @@ A PR = a completed set whose **weight** exceeds the **heaviest weight ever logge
 exercise across all prior completed sessions (any rep count). The very first time an exercise is
 ever logged is **not** a PR (nothing to exceed). `session.prs` is computed once, at session
 creation, from every session already in the DB at that moment — it is a historical fact and is
-never recomputed retroactively.
+never recomputed retroactively **by other sessions' later edits or creations**.
+
+**Editing a session** (`PUT /api/sessions/:id`, decision #22) is the one exception: its own `prs`
+**are** recomputed at edit time, against the best weight in every **other** session (this session's
+own id is excluded from the "prior best" scan — see `computePriorBestMap(db, excludeSessionId)` in
+`server/lib/pr.js`). This is what makes re-saving a session's unchanged sets not spuriously invent
+or drop a PR against itself, while still letting an edited weight correctly gain or lose PR status
+relative to the rest of history.
 
 ---
 
@@ -391,3 +431,11 @@ never recomputed retroactively.
   (`Dumbbells, Adjustable bench, Pull-up bar, Resistance bands, Kettlebells`) and
   **Commercial Gym** (`Barbell, Squat rack, Cable machine, Leg press, Smith machine, Treadmill,
   Rowing machine, Dumbbells, Bench`).
+- **18 equipment items** (decision #23) — the exact former `COMMON_EQUIPMENT` client-side constant,
+  now server-managed: **Barbell, Dumbbells, Kettlebells, Cable machine, Squat rack, Bench,
+  Adjustable bench, Smith machine, Leg press, Leg curl machine, Treadmill, Rowing machine,
+  Elliptical, Pull-up bar, Dip station, Resistance bands, Medicine ball, Battle ropes**. Looked up
+  by name (case-insensitively) and skipped if present, so re-running the seed never duplicates.
+  **`substitutes`** (decision #24) default to `[]` for every item except **Adjustable bench**,
+  which defaults to `["Bench"]`. On re-seed, an existing row's `substitutes` are only **backfilled**
+  when currently empty — a user's own edit to that list is never clobbered.

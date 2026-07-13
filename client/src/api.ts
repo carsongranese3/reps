@@ -4,6 +4,8 @@
 // (usually via the React Query hooks in src/hooks/*).
 
 import type {
+  Equipment,
+  EquipmentInput,
   Exercise,
   ExerciseAutofillSuggestion,
   ExerciseInput,
@@ -14,6 +16,7 @@ import type {
   ScheduleEntry,
   Session,
   SessionInput,
+  SessionUpdateInput,
   StatsPayload,
   Weekday,
   WeekPayload,
@@ -161,6 +164,30 @@ export function deleteGym(id: string): Promise<{ deleted: true; id: string }> {
 }
 
 // ---------------------------------------------------------------------------
+// Equipment (decision #23 — managed master list feeding exercise/gym pickers)
+// ---------------------------------------------------------------------------
+
+export function listEquipment(q?: string): Promise<Equipment[]> {
+  return request(`/equipment${qs({ q })}`);
+}
+
+export function getEquipment(id: string): Promise<Equipment> {
+  return request(`/equipment/${id}`);
+}
+
+export function createEquipment(body: EquipmentInput): Promise<Equipment> {
+  return request(`/equipment`, { method: 'POST', body: JSON.stringify(body) });
+}
+
+export function updateEquipment(id: string, body: Partial<EquipmentInput>): Promise<Equipment> {
+  return request(`/equipment/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+}
+
+export function deleteEquipment(id: string): Promise<{ deleted: true; id: string }> {
+  return request(`/equipment/${id}`, { method: 'DELETE' });
+}
+
+// ---------------------------------------------------------------------------
 // Plan
 // ---------------------------------------------------------------------------
 
@@ -215,6 +242,10 @@ export function getSession(id: string): Promise<Session> {
 
 export function createSession(body: SessionInput): Promise<Session> {
   return request(`/sessions`, { method: 'POST', body: JSON.stringify(body) });
+}
+
+export function updateSession(id: string, body: SessionUpdateInput): Promise<Session> {
+  return request(`/sessions/${id}`, { method: 'PUT', body: JSON.stringify(body) });
 }
 
 export function deleteSession(id: string): Promise<{ deleted: true; id: string }> {

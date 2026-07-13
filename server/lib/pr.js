@@ -6,8 +6,16 @@ import { safeParseArray } from './serialize.js';
 
 // Map of exercise_id -> heaviest completed weight ever logged, from sessions
 // already committed to the DB (call BEFORE inserting the new session).
-export function computePriorBestMap(db) {
-  const rows = db.prepare('SELECT entries FROM sessions').all();
+//
+// `excludeSessionId` (optional) omits one session from the "prior best" scan —
+// used when editing an existing session so its own (soon-to-be-overwritten)
+// entries never count toward their own prior best. Without this, re-saving a
+// session unchanged would let it "beat" itself for a spurious PR, or an edited
+// session could be squashed against its own now-stale rows.
+export function computePriorBestMap(db, excludeSessionId = null) {
+  const rows = excludeSessionId
+    ? db.prepare('SELECT entries FROM sessions WHERE id != ?').all(excludeSessionId)
+    : db.prepare('SELECT entries FROM sessions').all();
   const map = new Map();
   for (const row of rows) {
     const entries = safeParseArray(row.entries);

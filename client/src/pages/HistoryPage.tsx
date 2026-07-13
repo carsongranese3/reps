@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStats } from '../hooks/useStats';
 import { useSessions } from '../hooks/useSessions';
@@ -8,16 +8,52 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { categoryColor } from '../lib/category';
 import { formatVolume, relativeDayLabel, todayLocalDate } from '../lib/date';
 import { ApiError } from '../api';
+import type { WeeklyVolumePoint } from '../types';
 
-const PAGE_SIZE = 12;
+// Loaded generously so the selected-week drill-down (decision #22) has enough
+// history to filter client-side without extra pagination round-trips for the
+// common case (last 8 weeks of a personal log).
+const SESSIONS_PAGE_SIZE = 200; // server caps limit at 200; the 8-week chart window is well within this
+
+function shortDateLabel(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
 
 export function HistoryPage() {
   const stats = useStats();
-  const [limit, setLimit] = useState(PAGE_SIZE);
-  const sessions = useSessions({ limit });
+  const sessions = useSessions({ limit: SESSIONS_PAGE_SIZE });
   const today = todayLocalDate();
 
-  const maxVolume = Math.max(1, ...(stats.data?.weekly_volume.map((w) => w.volume) ?? [1]));
+  const weeks = stats.data?.weekly_volume ?? [];
+  const [selectedWeekStart, setSelectedWeekStart] = useState<string | null>(null);
+
+  // Default selection = the latest week (last bar). Re-default whenever the
+  // weekly_volume data first arrives or the current selection falls out of range.
+  useEffect(() => {
+    if (weeks.length === 0) return;
+    const stillValid = weeks.some((w) => w.week_start === selectedWeekStart);
+    if (!stillValid) {
+      setSelectedWeekStart(weeks[weeks.length - 1].week_start);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weeks.map((w) => w.week_start).join(',')]);
+
+  const selectedWeek: WeeklyVolumePoint | undefined = weeks.find(
+    (w) => w.week_start === selectedWeekStart
+  );
+
+  const maxVolume = Math.max(1, ...(weeks.map((w) => w.volume) ?? [1]));
+
+  const weekSessions = useMemo(() => {
+    if (!selectedWeek || !sessions.data) return [];
+    return sessions.data.sessions
+      .filter((s) => {
+        const d = s.date.slice(0, 10);
+        return d >= selectedWeek.week_start && d <= selectedWeek.week_end;
+      })
+      .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  }, [selectedWeek, sessions.data]);
 
   return (
     <div className="px-5 pb-10 pt-6 sm:px-9 sm:pt-8">
@@ -45,30 +81,48 @@ export function HistoryPage() {
             <div className="flex-1 rounded-2xl border border-black/[.07] bg-white p-5">
               <div className="mb-5 flex items-baseline justify-between">
                 <div className="text-[15px] font-bold text-ink">Weekly volume</div>
-                <div className="text-xs text-ink-muted">last 8 weeks · lb</div>
+                <div className="text-xs text-ink-muted">weekly · lb</div>
               </div>
               <div className="flex h-[150px] items-end gap-2.5 sm:gap-3.5">
-                {stats.data.weekly_volume.map((w, i) => {
-                  const isLast = i === stats.data!.weekly_volume.length - 1;
+                {weeks.map((w, i) => {
+                  const isSelected = w.week_start === selectedWeekStart;
                   const height = Math.max(4, (w.volume / maxVolume) * 100);
                   return (
-                    <div key={w.week_start} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
+                    <button
+                      key={w.week_start}
+                      type="button"
+                      onClick={() => setSelectedWeekStart(w.week_start)}
+                      aria-pressed={isSelected}
+                      aria-label={`Week of ${shortDateLabel(w.week_start)}: ${formatVolume(w.volume)}`}
+                      title={`${w.week_start} – ${w.week_end}: ${formatVolume(w.volume)}`}
+                      className="flex h-full flex-1 flex-col items-center justify-end gap-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                    >
                       <div
-                        className={`w-full rounded-t-md ${isLast ? 'bg-accent' : 'bg-[#E3D7C4]'}`}
+                        className={`w-full rounded-t-md transition-colors ${
+                          isSelected ? 'bg-accent' : 'bg-[#E3D7C4] hover:bg-[#d8c9ad]'
+                        }`}
                         style={{ height: `${height}%` }}
-                        title={`${w.week_start} – ${w.week_end}: ${formatVolume(w.volume)}`}
                       />
-                      <span className={`text-[11px] ${isLast ? 'font-semibold text-ink' : 'text-ink-faint'}`}>
+                      <span className={`text-[11px] ${isSelected ? 'font-semibold text-ink' : 'text-ink-faint'}`}>
                         W{i + 1}
                       </span>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
             </div>
 
             <div className="lg:w-[330px] lg:flex-none">
-              <div className="mb-3.5 text-[15px] font-bold text-ink">Recent sessions</div>
+              <div className="mb-3.5 flex items-baseline justify-between gap-2">
+                <div className="text-[15px] font-bold text-ink">
+                  {selectedWeek ? `Week of ${shortDateLabel(selectedWeek.week_start)}` : 'This week'}
+                </div>
+                {selectedWeek && (
+                  <div className="text-xs text-ink-muted">
+                    {shortDateLabel(selectedWeek.week_start)} – {shortDateLabel(selectedWeek.week_end)}
+                  </div>
+                )}
+              </div>
 
               {sessions.isLoading && <Spinner label="Loading sessions…" />}
               {sessions.isError && (
@@ -77,12 +131,15 @@ export function HistoryPage() {
                   onRetry={() => sessions.refetch()}
                 />
               )}
-              {sessions.data && sessions.data.sessions.length === 0 && (
-                <EmptyState title="No sessions yet" message="Finish a workout to see it here." />
+              {sessions.data && selectedWeek && weekSessions.length === 0 && (
+                <EmptyState
+                  title="No workouts this week"
+                  message={`${shortDateLabel(selectedWeek.week_start)} – ${shortDateLabel(selectedWeek.week_end)}`}
+                />
               )}
-              {sessions.data && sessions.data.sessions.length > 0 && (
+              {sessions.data && weekSessions.length > 0 && (
                 <div className="flex flex-col gap-2.5">
-                  {sessions.data.sessions.map((s) => (
+                  {weekSessions.map((s) => (
                     <Link
                       key={s.id}
                       to={`/history/${s.id}`}
@@ -111,13 +168,9 @@ export function HistoryPage() {
                     </Link>
                   ))}
                   {sessions.data.total > sessions.data.sessions.length && (
-                    <button
-                      type="button"
-                      onClick={() => setLimit((n) => n + PAGE_SIZE)}
-                      className="mt-1 rounded-lg bg-panel2 py-2.5 text-sm font-semibold text-ink hover:bg-panel2/70"
-                    >
-                      Load more
-                    </button>
+                    <p className="mt-1 text-center text-[11px] text-ink-faint">
+                      Showing the {sessions.data.sessions.length} most recent sessions.
+                    </p>
                   )}
                 </div>
               )}

@@ -7,6 +7,7 @@ import {
   useUpdateExercise,
   useUploadExerciseDemo,
 } from '../hooks/useExercises';
+import { useEquipmentList } from '../hooks/useEquipment';
 import { uploadExerciseDemoDraft, ApiError } from '../api';
 import { Spinner } from '../components/ui/Spinner';
 import { ErrorState } from '../components/ui/ErrorState';
@@ -27,6 +28,7 @@ export function ExerciseFormPage() {
   const updateExercise = useUpdateExercise();
   const uploadDemo = useUploadExerciseDemo();
   const autofill = useAutofillExercise();
+  const { data: equipmentList } = useEquipmentList();
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState<WorkoutCategory>('Strength');
@@ -230,9 +232,15 @@ export function ExerciseFormPage() {
             <input
               value={equipment}
               onChange={(e) => setEquipment(e.target.value)}
+              list="equipment-options"
               className="rounded-xl bg-panel px-4 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/40"
-              placeholder="Barbell"
+              placeholder="Start typing or pick…"
             />
+            <datalist id="equipment-options">
+              {['Bodyweight', ...(equipmentList?.map((e) => e.name) ?? [])].map((opt) => (
+                <option key={opt} value={opt} />
+              ))}
+            </datalist>
           </label>
           <label className="flex flex-col gap-1.5 text-sm font-semibold text-ink-secondary">
             Difficulty

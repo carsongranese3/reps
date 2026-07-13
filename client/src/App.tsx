@@ -14,6 +14,8 @@ import { SessionDetailPage } from './pages/SessionDetailPage';
 import { GymsPage } from './pages/GymsPage';
 import { GymDetailPage } from './pages/GymDetailPage';
 import { GymFormPage } from './pages/GymFormPage';
+import { EquipmentPage } from './pages/EquipmentPage';
+import { EquipmentFormPage } from './pages/EquipmentFormPage';
 
 export function App() {
   return (
@@ -37,6 +39,9 @@ export function App() {
         <Route path="/exercises/:exerciseId/edit" element={<ExerciseFormPage />} />
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/history/:sessionId" element={<SessionDetailPage />} />
+        <Route path="/equipment" element={<EquipmentPage />} />
+        <Route path="/equipment/new" element={<EquipmentFormPage />} />
+        <Route path="/equipment/:equipmentId/edit" element={<EquipmentFormPage />} />
         <Route path="*" element={<Navigate to="/week" replace />} />
       </Routes>
     </AppShell>

@@ -89,11 +89,9 @@ export function WorkoutDetailPage() {
         <div className="mt-1 text-sm text-white/85">
           {workout.est_minutes} min · {workout.exercise_count} exercise
           {workout.exercise_count === 1 ? '' : 's'}
-          {gym && (
-            <span className="ml-1 inline-flex items-center gap-1">
-              · <GymIcon size={13} className="text-white/85" /> {gym.name}
-            </span>
-          )}
+          <span className="ml-1 inline-flex items-center gap-1">
+            · <GymIcon size={13} className="text-white/85" /> {gym?.name ?? 'Generic'}
+          </span>
         </div>
       </div>
 

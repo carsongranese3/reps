@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useWorkouts, useUpdateWorkout } from '../hooks/useWorkouts';
 import { useExerciseMap } from '../hooks/useExercises';
+import { useGym } from '../hooks/useGyms';
 import { Spinner } from '../components/ui/Spinner';
 import { ErrorState } from '../components/ui/ErrorState';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Chip } from '../components/ui/Chip';
-import { HeartIcon, PlusIcon, SearchIcon } from '../components/icons';
+import { GymIcon, HeartIcon, PlusIcon, SearchIcon } from '../components/icons';
 import { categoryGradient, WORKOUT_CATEGORIES } from '../lib/category';
 import { ResumeBanner } from '../components/ResumeBanner';
 import { MuscleMap } from '../components/MuscleMap';
@@ -19,6 +20,7 @@ const FILTERS = ['All', ...WORKOUT_CATEGORIES] as const;
 function WorkoutCard({ workout }: { workout: Workout }) {
   const updateWorkout = useUpdateWorkout();
   const { map: exerciseMap } = useExerciseMap();
+  const { data: gym } = useGym(workout.gym_id ?? undefined);
   const intensities = aggregateWorkoutIntensities(workout.exercises, exerciseMap);
   const showMap = hasMappableMuscles(intensities);
 
@@ -53,6 +55,9 @@ function WorkoutCard({ workout }: { workout: Workout }) {
             : `${workout.est_minutes} min · ${workout.exercise_count} exercise${
                 workout.exercise_count === 1 ? '' : 's'
               } · ${workout.type}`}
+        </div>
+        <div className="mt-1 flex items-center gap-1 text-[12.5px] text-ink-faint">
+          <GymIcon size={12} /> {gym?.name ?? 'Generic'}
         </div>
       </div>
     </Link>

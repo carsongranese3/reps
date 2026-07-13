@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
+  EquipmentIcon,
   ExercisesIcon,
   GymIcon,
   HistoryIcon,
@@ -11,24 +12,27 @@ import {
 import { useWorkouts } from '../../hooks/useWorkouts';
 
 // Build is reached from the "New workout" button on Workouts, so it's not a nav item.
-// Schedule sits directly under This Week (decision #21 pt.4).
+// Schedule sits directly under This Week (decision #21 pt.4); History moves directly
+// under Schedule (decision #23). Equipment is a desktop-only item, like Exercises,
+// to avoid crowding the phone tab bar — reachable by route on phone.
 const DESKTOP_NAV = [
   { to: '/week', label: 'This Week', Icon: WeekIcon },
   { to: '/schedule', label: 'Schedule', Icon: ScheduleIcon },
+  { to: '/history', label: 'History', Icon: HistoryIcon },
   { to: '/gyms', label: 'Gym', Icon: GymIcon },
   { to: '/workouts', label: 'Workouts', Icon: WorkoutsIcon },
   { to: '/exercises', label: 'Exercises', Icon: ExercisesIcon },
-  { to: '/history', label: 'History', Icon: HistoryIcon },
+  { to: '/equipment', label: 'Equipment', Icon: EquipmentIcon },
 ];
 
-// Phone reaches Exercises & Build contextually — five tabs, Schedule added as the
-// 5th (decision #21 pt.4), right after This Week.
+// Phone reaches Exercises, Equipment & Build contextually — five tabs, History
+// moved up directly under Schedule (decision #23).
 const PHONE_TABS = [
   { to: '/week', label: 'This Week', Icon: WeekIcon },
   { to: '/schedule', label: 'Schedule', Icon: ScheduleIcon },
+  { to: '/history', label: 'History', Icon: HistoryIcon },
   { to: '/gyms', label: 'Gym', Icon: GymIcon },
   { to: '/workouts', label: 'Workouts', Icon: WorkoutsIcon },
-  { to: '/history', label: 'History', Icon: HistoryIcon },
 ];
 
 function navLinkClass(isActive: boolean): string {

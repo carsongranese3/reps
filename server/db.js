@@ -200,6 +200,36 @@ const TABLES = {
       updated_at: 'TEXT',
     },
   },
+  equipment: {
+    // A curated, managed master list of gym equipment (decision #23) — feeds the
+    // exercise Equipment datalist and the gym equipment checklist as suggestions.
+    // Exercises/gyms still STORE equipment as free strings; this table is only the
+    // suggestion source, so deleting a row here never touches exercises/gyms.
+    ddl: `
+      CREATE TABLE IF NOT EXISTS equipment (
+        id         TEXT PRIMARY KEY,
+        name       TEXT NOT NULL,
+        substitutes TEXT NOT NULL DEFAULT '[]',
+        image      TEXT,
+        image_pos  TEXT,
+        image_zoom REAL,
+        image_fit  TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    `,
+    columns: {
+      id: 'TEXT',
+      name: 'TEXT',
+      substitutes: "TEXT NOT NULL DEFAULT '[]'",
+      image: 'TEXT',
+      image_pos: 'TEXT',
+      image_zoom: 'REAL',
+      image_fit: 'TEXT',
+      created_at: 'TEXT',
+      updated_at: 'TEXT',
+    },
+  },
 };
 
 function ensureTable(name, def) {
@@ -228,6 +258,7 @@ export function migrate() {
     CREATE INDEX IF NOT EXISTS idx_sessions_workout_id ON sessions(workout_id);
     CREATE INDEX IF NOT EXISTS idx_gyms_favorite ON gyms(favorite);
     CREATE INDEX IF NOT EXISTS idx_schedule_date ON schedule(date);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_equipment_name ON equipment(name COLLATE NOCASE);
   `);
 
   // Seed the fixed Mon..Sun plan rows if they don't exist yet (day is the PK).

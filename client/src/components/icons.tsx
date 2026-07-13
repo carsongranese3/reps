@@ -315,6 +315,30 @@ export function ScheduleIcon({ className, size = 18 }: IconProps) {
   );
 }
 
+// Distinct from GymIcon (a rack/roof glyph) and WorkoutsIcon (a plain barbell):
+// a barbell with visibly stacked weight plates, for the managed Equipment list.
+export function EquipmentIcon({ className, size = 18 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M2 12h2M20 12h2M5 9v6M19 9v6" />
+      <rect x="5" y="9" width="2.4" height="6" rx="0.6" />
+      <rect x="16.6" y="9" width="2.4" height="6" rx="0.6" />
+      <path d="M7.4 12h9.2" />
+    </svg>
+  );
+}
+
 export function CalendarIcon({ className, size = 16 }: IconProps) {
   return (
     <svg

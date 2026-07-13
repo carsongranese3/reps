@@ -23,10 +23,22 @@ export function computeStats(db, todayStr) {
     }
   }
 
-  // Last 8 Mon-Sun weeks, oldest -> newest, ending with the current week.
+  // Weekly volume, oldest -> newest, ending with the current week. Starts at the
+  // first week that has a logged session (so there are no empty leading weeks) —
+  // or the current week if nothing is logged yet — capped at the last 8 weeks.
   const currentMonday = mondayOfWeek(todayStr);
+  let minDateStr = null;
+  for (const s of sessions) {
+    const d = s.date.slice(0, 10);
+    if (!minDateStr || d < minDateStr) minDateStr = d;
+  }
+  const earliestMonday = minDateStr ? mondayOfWeek(minDateStr) : currentMonday;
+  const weeksSinceStart = Math.round(
+    (Date.parse(formatDateOnly(currentMonday)) - Date.parse(formatDateOnly(earliestMonday))) / (7 * 86400000)
+  );
+  const startW = Math.max(0, Math.min(7, weeksSinceStart));
   const weekly_volume = [];
-  for (let w = 7; w >= 0; w--) {
+  for (let w = startW; w >= 0; w--) {
     const start = addDaysUTC(currentMonday, -7 * w);
     const end = addDaysUTC(start, 6);
     const startStr = formatDateOnly(start);
