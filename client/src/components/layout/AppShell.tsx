@@ -51,8 +51,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         <aside className="hidden w-[238px] flex-none flex-col border-r border-black/[.06] bg-sidebar px-4 py-5 md:flex">
           <div className="flex items-center gap-2.5 px-2 pb-6">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-ink">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round">
-                <path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10" />
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" strokeWidth="1.9" strokeLinecap="round">
+                <path d="M7 7v10M17 7v10M7 12h10" stroke="#F5EFE6" />
+                <path d="M4 9v6M20 9v6" stroke="#B15834" />
               </svg>
             </div>
             <span className="text-[17px] font-bold text-ink">Reps</span>

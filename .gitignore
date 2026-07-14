@@ -28,3 +28,6 @@ client/node_modules/
 server/.env
 !server/.env.example
 *.tsbuildinfo
+
+# personal agent handoff, not versioned
+context.md
