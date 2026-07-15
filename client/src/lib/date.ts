@@ -50,6 +50,13 @@ export function nowLocalIso(): string {
   )}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.000Z`;
 }
 
+/** Same ISO-ish wall-clock shape as `nowLocalIso()`, but for an arbitrary chosen
+ * YYYY-MM-DD (e.g. a backdated manual log). Fixed at a mid-day time since a manual
+ * log has no real clock time; the server only reads the first 10 chars anyway. */
+export function localIsoForDate(dateStr: string, hour = 12): string {
+  return `${dateStr}T${pad(hour)}:00:00.000Z`;
+}
+
 /** Mon-first JS day index (0=Mon..6=Sun) from a Date's local getDay() (0=Sun..6=Sat). */
 export function mondayIndex(jsDay: number): number {
   return (jsDay + 6) % 7;

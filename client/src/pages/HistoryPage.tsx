@@ -5,6 +5,7 @@ import { useSessions } from '../hooks/useSessions';
 import { Spinner } from '../components/ui/Spinner';
 import { ErrorState } from '../components/ui/ErrorState';
 import { EmptyState } from '../components/ui/EmptyState';
+import { PlusIcon } from '../components/icons';
 import { categoryColor } from '../lib/category';
 import { formatVolume, relativeDayLabel, todayLocalDate } from '../lib/date';
 import { ApiError } from '../api';
@@ -58,7 +59,16 @@ export function HistoryPage() {
   return (
     <div className="px-5 pb-10 pt-6 sm:px-9 sm:pt-8">
       <div className="text-[11px] font-semibold uppercase tracking-[.14em] text-ink-faint">Progress</div>
-      <h1 className="mt-1 text-3xl font-bold tracking-tight text-ink sm:text-[38px]">History</h1>
+      <div className="mt-1 flex items-center justify-between gap-3">
+        <h1 className="text-3xl font-bold tracking-tight text-ink sm:text-[38px]">History</h1>
+        <Link
+          to="/history/new"
+          className="flex flex-none items-center gap-1.5 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-white hover:bg-ink/90"
+        >
+          <PlusIcon size={16} />
+          <span className="hidden sm:inline">Add workout</span>
+        </Link>
+      </div>
 
       {stats.isLoading && <Spinner label="Loading stats…" />}
       {stats.isError && (
