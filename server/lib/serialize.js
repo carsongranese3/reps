@@ -18,6 +18,79 @@ export function safeParseArray(json, fallback = []) {
   }
 }
 
+// Coerces a legacy scalar equipment value into a single-group string[][]:
+// "Barbell" -> [["Barbell"]]; blank/None/Bodyweight/null -> [].
+function legacyEquipmentToGroups(v) {
+  const s = trimOrNull(v);
+  if (!s || /^(none|bodyweight)$/i.test(s)) return [];
+  return [[s]];
+}
+
+// Cleans a single OR-group (array of alternative equipment names): trim every
+// item, drop non-strings/blanks, dedupe within the group (case-sensitive,
+// first-seen order). Returns [] if nothing survives (an empty group is
+// dropped entirely by callers).
+function cleanEquipmentGroup(group) {
+  if (!Array.isArray(group)) return [];
+  return dedupeStrings(
+    group.map((s) => (typeof s === 'string' ? s.trim() : '')).filter(Boolean)
+  );
+}
+
+// Cleans an incoming `equipment_groups` value (decision #25/#28 — AND-of-ORs)
+// into a well-formed string[][]: coerces to an array of arrays (a bare flat
+// string[] treats each item as its own single-item group; a bare scalar/
+// garbage value collapses to []), trims every item, drops blank items, dedupes
+// within each group, and drops any group left empty after cleaning. Never
+// throws on garbage input.
+export function normalizeEquipmentGroups(v) {
+  if (!Array.isArray(v)) return [];
+  const groups = v.map((g) => (Array.isArray(g) ? cleanEquipmentGroup(g) : cleanEquipmentGroup([g])));
+  return groups.filter((g) => g.length > 0);
+}
+
+// Defensively reads a raw DB column of ANY prior shape into `string[][]`
+// (decision #28 — restores #25's AND-of-ORs, reversing #26's flat collapse):
+//   - already-grouped string[][]        -> kept (cleaned)
+//   - #26's flat string[]                -> each item becomes its own required
+//                                            single-item group: ["a","b"] -> [["a"],["b"]]
+//   - legacy bare scalar ("Barbell")     -> [["Barbell"]] (blank/None/Bodyweight -> [])
+// Used wherever a raw DB row's equipment needs reading (rowToExercise, and the
+// PUT patch merge in index.js).
+export function safeParseEquipmentGroups(raw) {
+  if (raw == null) return [];
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    // Not valid JSON at all — a bare legacy scalar string like "Barbell".
+    return legacyEquipmentToGroups(raw);
+  }
+  if (Array.isArray(parsed)) {
+    if (parsed.length === 0) return [];
+    if (parsed.every((item) => Array.isArray(item))) {
+      // Already grouped string[][] (decisions #25/#28) -> clean in place.
+      return normalizeEquipmentGroups(parsed);
+    }
+    // Flat string[] (decision #26) -> each item its own required group.
+    return normalizeEquipmentGroups(parsed.map((s) => [s]));
+  }
+  // Parsed to something else entirely (number, object, etc.) — treat as legacy scalar.
+  return legacyEquipmentToGroups(parsed);
+}
+
+// Canonical summary formatter for `equipment_groups` (decision #28) — must
+// match the client's formatter byte-for-byte. Outer array = AND, joined with
+// " + "; an inner group with >1 item = OR, rendered "(a or b)"; empty input
+// (bodyweight/no equipment) -> "Bodyweight".
+export function formatEquipmentGroups(groups) {
+  const clean = (Array.isArray(groups) ? groups : [])
+    .map((g) => (Array.isArray(g) ? g.map((s) => String(s ?? '').trim()).filter(Boolean) : []))
+    .filter((g) => g.length);
+  if (!clean.length) return 'Bodyweight';
+  return clean.map((g) => (g.length > 1 ? '(' + g.join(' or ') + ')' : g[0])).join(' + ');
+}
+
 export function trimOrNull(v) {
   if (v === undefined || v === null) return null;
   const s = String(v).trim();
@@ -48,10 +121,15 @@ export function httpUrlOrNull(v) {
 
 export const EXERCISE_CATEGORIES = ['Strength', 'Push', 'Pull', 'Legs', 'Cardio', 'Mobility'];
 
+// Stateless — callers that need patch semantics (PUT) resolve the
+// existing/incoming merge onto `body.equipment_groups` themselves before
+// calling this (see index.js), the same way the raw row's other scalar
+// columns are merged via `{ ...existing, ...req.body }` before
+// normalizeExerciseBody ever sees them.
 export function normalizeExerciseBody(body = {}) {
   const name = trimOrNull(body.name) ?? '';
   const category = trimOrNull(body.category);
-  const equipment = trimOrNull(body.equipment);
+  const equipment_groups = normalizeEquipmentGroups(body.equipment_groups);
   const difficulty = trimOrNull(body.difficulty);
   const muscles_worked = stringArray(body.muscles_worked);
   const how_to = stringArray(body.how_to);
@@ -70,7 +148,7 @@ export function normalizeExerciseBody(body = {}) {
   // only kept if it's a real http(s) URL, else null. See decision #16.
   const video_url = httpUrlOrNull(body.video_url);
 
-  return { name, category, equipment, difficulty, muscles_worked, how_to, step_times, tags, image, source_url, video_url };
+  return { name, category, equipment_groups, difficulty, muscles_worked, how_to, step_times, tags, image, source_url, video_url };
 }
 
 export function hasDemoFile(demo_file) {
@@ -84,11 +162,17 @@ export function hasDemoFile(demo_file) {
 
 export function rowToExercise(row) {
   if (!row) return null;
+  // equipment_groups (decision #28 — AND-of-ORs) is the source of truth.
+  // safeParseEquipmentGroups defensively coerces any prior stored shape
+  // (legacy scalar, or #26's flat string[]) into the grouped shape on read.
+  const equipment_groups = safeParseEquipmentGroups(row.equipment);
   return {
     id: row.id,
     name: row.name,
     category: row.category,
-    equipment: row.equipment,
+    equipment_groups,
+    // Derived, read-only summary string for display — never written directly.
+    equipment: formatEquipmentGroups(equipment_groups),
     difficulty: row.difficulty,
     muscles_worked: safeParseArray(row.muscles_worked),
     how_to: safeParseArray(row.how_to),

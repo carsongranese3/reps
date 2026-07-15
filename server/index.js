@@ -28,6 +28,7 @@ import {
   normalizeSessionEntries,
   rowToSession,
   safeParseArray,
+  safeParseEquipmentGroups,
 } from './lib/serialize.js';
 import { computePriorBestMap, detectPRs } from './lib/pr.js';
 import {
@@ -114,7 +115,7 @@ app.post('/api/exercises', (req, res) => {
     id,
     body.name,
     body.category,
-    body.equipment,
+    JSON.stringify(body.equipment_groups),
     body.difficulty,
     body.image,
     body.source_url,
@@ -142,7 +143,14 @@ app.put('/api/exercises/:id', (req, res) => {
   const existing = db.prepare('SELECT * FROM exercises WHERE id = ?').get(req.params.id);
   if (!existing) return notFound(res, 'Exercise');
 
-  const body = normalizeExerciseBody({ ...existing, ...req.body });
+  // equipment is a grouped (string[][]) JSON column on the raw row. safeParse
+  // it into `equipment_groups` before the spread so a PUT that omits
+  // equipment_groups still resolves to the existing stored groups instead of
+  // the raw JSON string (or losing it to the row's raw `equipment` key, which
+  // normalizeExerciseBody doesn't read); any prior stored shape (legacy
+  // scalar, or #26's flat string[]) upgrades transparently on read.
+  const merged = { ...existing, equipment_groups: safeParseEquipmentGroups(existing.equipment), ...req.body };
+  const body = normalizeExerciseBody(merged);
   if (!body.name) return sendError(res, 400, 'Name is required');
   if (body.category && !EXERCISE_CATEGORIES.includes(body.category)) {
     return sendError(res, 400, `category must be one of: ${EXERCISE_CATEGORIES.join(', ')}`);
@@ -157,7 +165,7 @@ app.put('/api/exercises/:id', (req, res) => {
   ).run(
     body.name,
     body.category,
-    body.equipment,
+    JSON.stringify(body.equipment_groups),
     body.difficulty,
     body.image,
     body.source_url,

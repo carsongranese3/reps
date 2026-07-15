@@ -15,9 +15,55 @@ import { Chip } from '../components/ui/Chip';
 import { PlusIcon } from '../components/icons';
 import { WORKOUT_CATEGORIES } from '../lib/category';
 import { parseYouTubeId, youTubeEmbedUrl } from '../lib/youtube';
+import { formatEquipmentGroups } from '../lib/equipment';
 import type { WorkoutCategory } from '../types';
 
 type AutofillState = 'idle' | 'loading' | 'success';
+
+let equipmentKeyCounter = 0;
+function nextEquipmentKey() {
+  equipmentKeyCounter += 1;
+  return `eq-${equipmentKeyCounter}`;
+}
+
+/** One alternative item within a required-equipment AND row (decision #28: AND-of-ORs). */
+interface EquipmentItem {
+  key: string;
+  value: string;
+}
+
+/** One required AND row; its `items` are OR alternatives (e.g. "Dip Station or Bench"). */
+interface EquipmentGroup {
+  key: string;
+  items: EquipmentItem[];
+}
+
+function toEquipmentGroups(groups: string[][]): EquipmentGroup[] {
+  return groups.map((items) => ({
+    key: nextEquipmentKey(),
+    items: (items.length ? items : ['']).map((value) => ({ key: nextEquipmentKey(), value })),
+  }));
+}
+
+/** Trim items, drop blanks, dedupe within a group, drop empty groups — shared so the
+ * save payload matches the live preview. */
+function cleanEquipmentGroups(groups: EquipmentGroup[]): string[][] {
+  const cleaned: string[][] = [];
+  for (const group of groups) {
+    const seen = new Set<string>();
+    const items: string[] = [];
+    for (const item of group.items) {
+      const v = item.value.trim();
+      if (!v) continue;
+      const key = v.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      items.push(v);
+    }
+    if (items.length) cleaned.push(items);
+  }
+  return cleaned;
+}
 
 export function ExerciseFormPage() {
   const { exerciseId } = useParams<{ exerciseId: string }>();
@@ -32,7 +78,7 @@ export function ExerciseFormPage() {
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState<WorkoutCategory>('Strength');
-  const [equipment, setEquipment] = useState('');
+  const [equipmentGroups, setEquipmentGroups] = useState<EquipmentGroup[]>([]);
   const [difficulty, setDifficulty] = useState('');
   const [muscles, setMuscles] = useState<string[]>([]);
   const [muscleInput, setMuscleInput] = useState('');
@@ -52,7 +98,7 @@ export function ExerciseFormPage() {
     if (isEdit && existing && !hydrated) {
       setName(existing.name);
       setCategory((existing.category as WorkoutCategory) ?? 'Strength');
-      setEquipment(existing.equipment ?? '');
+      setEquipmentGroups(toEquipmentGroups(existing.equipment_groups ?? []));
       setDifficulty(existing.difficulty ?? '');
       setMuscles(existing.muscles_worked);
       setSteps(existing.how_to.length ? existing.how_to : ['']);
@@ -100,7 +146,7 @@ export function ExerciseFormPage() {
     try {
       const { suggestion } = await autofill.mutateAsync(trimmedName);
       if (suggestion.category) setCategory(suggestion.category);
-      if (suggestion.equipment) setEquipment(suggestion.equipment);
+      setEquipmentGroups(toEquipmentGroups(suggestion.equipment_groups ?? []));
       if (suggestion.difficulty) setDifficulty(suggestion.difficulty);
       setMuscles(suggestion.muscles_worked);
       setSteps(suggestion.how_to.length ? suggestion.how_to : ['']);
@@ -134,7 +180,7 @@ export function ExerciseFormPage() {
     const body = {
       name: name.trim(),
       category,
-      equipment: equipment.trim() || null,
+      equipment_groups: cleanEquipmentGroups(equipmentGroups),
       difficulty: difficulty.trim() || null,
       muscles_worked: muscles,
       how_to: cleanSteps,
@@ -226,32 +272,117 @@ export function ExerciseFormPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <label className="flex flex-col gap-1.5 text-sm font-semibold text-ink-secondary">
-            Equipment
-            <input
-              value={equipment}
-              onChange={(e) => setEquipment(e.target.value)}
-              list="equipment-options"
-              className="rounded-xl bg-panel px-4 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/40"
-              placeholder="Start typing or pick…"
-            />
-            <datalist id="equipment-options">
-              {['Bodyweight', ...(equipmentList?.map((e) => e.name) ?? [])].map((opt) => (
-                <option key={opt} value={opt} />
-              ))}
-            </datalist>
-          </label>
-          <label className="flex flex-col gap-1.5 text-sm font-semibold text-ink-secondary">
-            Difficulty
-            <input
-              value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value)}
-              className="rounded-xl bg-panel px-4 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/40"
-              placeholder="Intermediate"
-            />
-          </label>
+        <div>
+          <div className="mb-2 text-sm font-semibold text-ink-secondary">Equipment needed</div>
+          <datalist id="equipment-options">
+            {['Bodyweight', ...(equipmentList?.map((e) => e.name) ?? [])].map((opt) => (
+              <option key={opt} value={opt} />
+            ))}
+          </datalist>
+          <div className="flex flex-col gap-3">
+            {equipmentGroups.map((group, gi) => (
+              <div key={group.key} className="rounded-xl bg-panel p-3">
+                {gi > 0 && (
+                  <div className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-ink-faint">
+                    and
+                  </div>
+                )}
+                <div className="flex flex-col gap-1.5">
+                  {group.items.map((item, ii) => (
+                    <div key={item.key} className="flex items-center gap-2">
+                      {ii > 0 && (
+                        <span className="w-6 flex-none text-[10px] font-bold uppercase text-ink-faint">
+                          or
+                        </span>
+                      )}
+                      <input
+                        value={item.value}
+                        onChange={(e) =>
+                          setEquipmentGroups((groups) =>
+                            groups.map((g) =>
+                              g.key === group.key
+                                ? {
+                                    ...g,
+                                    items: g.items.map((it) =>
+                                      it.key === item.key ? { ...it, value: e.target.value } : it
+                                    ),
+                                  }
+                                : g
+                            )
+                          )
+                        }
+                        list="equipment-options"
+                        aria-label={ii > 0 ? 'Alternative equipment' : 'Required equipment'}
+                        placeholder="Start typing or pick…"
+                        className="flex-1 rounded-lg bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/40"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEquipmentGroups((groups) =>
+                            groups
+                              .map((g) =>
+                                g.key === group.key
+                                  ? { ...g, items: g.items.filter((it) => it.key !== item.key) }
+                                  : g
+                              )
+                              .filter((g) => g.items.length > 0)
+                          )
+                        }
+                        aria-label={`Remove equipment ${item.value || ''}`}
+                        className="text-ink-faint hover:text-ink"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setEquipmentGroups((groups) =>
+                      groups.map((g) =>
+                        g.key === group.key
+                          ? { ...g, items: [...g.items, { key: nextEquipmentKey(), value: '' }] }
+                          : g
+                      )
+                    )
+                  }
+                  className="mt-1.5 text-xs font-semibold text-ink-secondary hover:text-ink hover:underline"
+                >
+                  + or…
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() =>
+                setEquipmentGroups((groups) => [
+                  ...groups,
+                  { key: nextEquipmentKey(), items: [{ key: nextEquipmentKey(), value: '' }] },
+                ])
+              }
+              className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-black/15 py-2 text-sm font-semibold text-ink-secondary hover:bg-panel/40"
+            >
+              <PlusIcon size={14} />
+              Add required equipment
+            </button>
+          </div>
+          <p className="mt-1.5 text-xs text-ink-faint">
+            Requires:{' '}
+            {formatEquipmentGroups(equipmentGroups.map((g) => g.items.map((it) => it.value)))}
+          </p>
         </div>
+
+        <label className="flex max-w-xs flex-col gap-1.5 text-sm font-semibold text-ink-secondary">
+          Difficulty
+          <input
+            value={difficulty}
+            onChange={(e) => setDifficulty(e.target.value)}
+            className="rounded-xl bg-panel px-4 py-3 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent/40"
+            placeholder="Intermediate"
+          />
+        </label>
 
         <div>
           <div className="mb-2 text-sm font-semibold text-ink-secondary">Muscles worked</div>

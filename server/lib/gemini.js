@@ -9,7 +9,7 @@
 //
 // Env is read at call time (not import time) so tests / a keyless boot are fine.
 
-import { EXERCISE_CATEGORIES, trimOrNull, stringArray, httpUrlOrNull } from './serialize.js';
+import { EXERCISE_CATEGORIES, trimOrNull, stringArray, httpUrlOrNull, normalizeEquipmentGroups } from './serialize.js';
 
 const DEFAULT_MODEL = 'gemini-2.0-flash';
 const REQUEST_TIMEOUT_MS = 15000;
@@ -30,10 +30,22 @@ export class AutofillError extends Error {
 function buildPrompt(name, equipmentOptions = []) {
   const equipmentLine =
     equipmentOptions.length > 0
-      ? `"equipment": the equipment this exercise needs — you MUST pick the single best match, spelled EXACTLY, from this list: [${equipmentOptions
-          .map((e) => `"${e}"`)
-          .join(', ')}]. If the exercise needs no equipment use "Bodyweight". Only invent a new short term if truly none of the listed options fit,`
-      : `"equipment": a short common equipment value (e.g. "Barbell", "Dumbbell", "Bodyweight", "Machine"),`;
+      ? `"equipment_groups": the equipment this exercise needs, as an array of OR-groups (AND-of-ORs) —
+    spelled EXACTLY from this list: [${equipmentOptions
+      .map((e) => `"${e}"`)
+      .join(', ')}]. Each element of "equipment_groups" is itself an array: the OUTER array is AND
+    (every group is required and "used together"), the INNER array is OR (any ONE item in that
+    group — an alternative usable for THIS exercise — satisfies it). e.g. a barbell bench press
+    needs a Barbell AND a Bench, so [["Barbell"],["Bench"]]; dips can be done on a Dip Station OR a
+    Bench, so [["Dip Station","Bench"]]. Only put multiple items in one group when they are genuine
+    exercise-specific alternatives for that single requirement — do not invent alternatives that
+    aren't realistic. If the exercise needs no equipment, use [] (bodyweight). Only invent a new
+    short term if truly none of the listed options fit,`
+      : `"equipment_groups": the equipment this exercise needs, as an array of OR-groups (AND-of-ORs).
+    The OUTER array is AND (every group required, "used together"); each INNER array is OR (any one
+    alternative satisfies that group), e.g. [["Barbell"],["Bench"]] for a barbell bench press, or
+    [["Dip Station","Bench"]] for dips (bench dips are a valid alternative). Use [] if the exercise
+    needs no equipment (bodyweight),`;
   return `You are helping populate a personal workout-tracking app's exercise library.
 Given only the exercise name below, respond with ONE JSON object (no prose, no markdown fences)
 with EXACTLY these fields:
@@ -88,7 +100,11 @@ export function parseAutofillResponse(text) {
 
   return {
     category: category && EXERCISE_CATEGORIES.includes(category) ? category : null,
-    equipment: trimOrNull(parsed.equipment),
+    // Lenient by design (decision #28): coerced/cleaned the same way
+    // normalizeExerciseBody cleans a saved exercise's equipment_groups, but we
+    // don't reject items that don't match an offered equipment name — the user
+    // reviews/edits the suggestion before saving.
+    equipment_groups: normalizeEquipmentGroups(parsed.equipment_groups),
     // difficulty is free-text in storage, so we pass through the trimmed value
     // even if it's outside SUGGESTED_DIFFICULTIES rather than dropping it.
     difficulty: trimOrNull(parsed.difficulty),

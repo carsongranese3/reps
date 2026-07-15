@@ -25,7 +25,7 @@ describe('Exercises CRUD', () => {
     const res = await request(ctx.app).post('/api/exercises').send({
       name: '  Barbell Bench Press ',
       category: 'Push',
-      equipment: 'Barbell',
+      equipment_groups: [['Barbell'], ['Bench']],
       difficulty: 'Intermediate',
       muscles_worked: ['Chest', 'Triceps', 'Front delts'],
       how_to: ['Step 1', 'Step 2'],
@@ -35,6 +35,10 @@ describe('Exercises CRUD', () => {
     expect(res.body.muscles_worked).toEqual(['Chest', 'Triceps', 'Front delts']);
     expect(res.body.has_demo).toBe(false);
     expect(res.body).not.toHaveProperty('demo_file');
+    // equipment_groups (decision #28) is the source of truth (AND-of-ORs);
+    // `equipment` is a derived, read-only summary string.
+    expect(res.body.equipment_groups).toEqual([['Barbell'], ['Bench']]);
+    expect(res.body.equipment).toBe('Barbell + Bench');
     id = res.body.id;
   });
 
@@ -77,9 +81,33 @@ describe('Exercises CRUD', () => {
     expect(res.status).toBe(200);
     expect(res.body.difficulty).toBe('Advanced');
     expect(res.body.name).toBe('Barbell Bench Press'); // unspecified fields preserved
+    // Patch semantics: equipment_groups survives a PUT that doesn't mention it
+    // (decision #28 — equipment is a grouped JSON string[][] column).
+    expect(res.body.equipment_groups).toEqual([['Barbell'], ['Bench']]);
+    expect(res.body.equipment).toBe('Barbell + Bench');
 
     const list = await request(ctx.app).get('/api/exercises');
     expect(list.body.length).toBe(3); // still 3, not duplicated
+  });
+
+  it('PUT with new equipment_groups replaces the old value entirely', async () => {
+    const res = await request(ctx.app).put(`/api/exercises/${id}`).send({ equipment_groups: [['Dumbbell']] });
+    expect(res.status).toBe(200);
+    expect(res.body.equipment_groups).toEqual([['Dumbbell']]);
+    expect(res.body.equipment).toBe('Dumbbell');
+
+    // Restore for subsequent tests in this file.
+    await request(ctx.app).put(`/api/exercises/${id}`).send({ equipment_groups: [['Barbell'], ['Bench']] });
+  });
+
+  it('a name-only PUT does not wipe equipment_groups', async () => {
+    const res = await request(ctx.app).put(`/api/exercises/${id}`).send({ name: 'Barbell Bench Press (Flat)' });
+    expect(res.status).toBe(200);
+    expect(res.body.name).toBe('Barbell Bench Press (Flat)');
+    expect(res.body.equipment_groups).toEqual([['Barbell'], ['Bench']]);
+
+    // Restore the name for subsequent tests in this file.
+    await request(ctx.app).put(`/api/exercises/${id}`).send({ name: 'Barbell Bench Press' });
   });
 
   it('round-trips video_url through create and edit (unverified demo link)', async () => {

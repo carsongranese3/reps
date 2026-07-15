@@ -157,7 +157,7 @@ export function ExerciseDetailPage() {
       <dl className="mt-4 flex flex-col gap-2 text-sm">
         {[
           { label: 'Category', value: ex.category },
-          { label: 'Equipment', value: ex.equipment },
+          { label: 'Equipment', value: ex.equipment && ex.equipment !== 'Bodyweight' ? ex.equipment : null },
           { label: 'Difficulty', value: ex.difficulty },
           { label: 'Muscles', value: ex.muscles_worked.join(' · ') || null },
         ]

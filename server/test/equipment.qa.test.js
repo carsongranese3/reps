@@ -24,10 +24,10 @@ describe('Equipment DELETE has no cascade onto exercises/gyms (decision #23)', (
     const eq = await request(ctx.app).post('/api/equipment').send({ name: 'Barbell' });
     expect(eq.status).toBe(201);
 
-    // An exercise that stores the equipment as a free string.
+    // An exercise that stores the equipment as a free string, inside a group.
     const ex = await request(ctx.app)
       .post('/api/exercises')
-      .send({ name: 'Bench Press', equipment: 'Barbell' });
+      .send({ name: 'Bench Press', equipment_groups: [['Barbell']] });
     expect(ex.status).toBe(201);
 
     // A gym whose equipment[] string list includes the same name.
@@ -41,10 +41,10 @@ describe('Equipment DELETE has no cascade onto exercises/gyms (decision #23)', (
     expect(del.status).toBe(200);
     expect(del.body).toEqual({ deleted: true, id: eq.body.id });
 
-    // Exercise string is unchanged.
+    // Exercise's equipment_groups is unchanged.
     const exAfter = await request(ctx.app).get(`/api/exercises/${ex.body.id}`);
     expect(exAfter.status).toBe(200);
-    expect(exAfter.body.equipment).toBe('Barbell');
+    expect(exAfter.body.equipment_groups).toEqual([['Barbell']]);
 
     // Gym equipment[] is unchanged.
     const gymAfter = await request(ctx.app).get(`/api/gyms/${gym.body.id}`);

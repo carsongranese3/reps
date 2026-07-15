@@ -19,6 +19,25 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+// equipment_groups (decision #28 — AND-of-ORs): outer array = AND (every
+// group required), inner array = OR (any one alternative satisfies it). Seed
+// data below mostly authors a flat `equipment` array (meaning "all required,
+// used together") or a single legacy scalar string, per exercise, for
+// brevity — this coerces either shape into groups the same way the boot
+// migration does: a flat string[] -> each item its own required group
+// (["Barbell","Bench"] -> [["Barbell"],["Bench"]]); a bare scalar ("Barbell")
+// -> [["Barbell"]]; blank/"None"/"Bodyweight" -> []. An `equipment` value that
+// is already string[][] (a genuine OR group, e.g. Dips) is kept as-is.
+function equipmentGroupsFor(ex) {
+  if (Array.isArray(ex.equipment)) {
+    if (ex.equipment.every((item) => Array.isArray(item))) return ex.equipment; // already grouped
+    return ex.equipment.map((item) => [item]); // flat -> single-item groups
+  }
+  const legacy = String(ex.equipment ?? '').trim();
+  if (!legacy || /^(none|bodyweight)$/i.test(legacy)) return [];
+  return [[legacy]];
+}
+
 function upsertExercise(ex) {
   const existing = db.prepare('SELECT id FROM exercises WHERE name = ?').get(ex.name);
   if (existing) return existing.id;
@@ -32,7 +51,7 @@ function upsertExercise(ex) {
     id,
     ex.name,
     ex.category,
-    ex.equipment,
+    JSON.stringify(equipmentGroupsFor(ex)),
     ex.difficulty,
     JSON.stringify(ex.muscles_worked),
     JSON.stringify(ex.how_to),
@@ -119,7 +138,7 @@ const EXERCISES = [
   {
     name: 'Back Squat',
     category: 'Legs',
-    equipment: 'Barbell',
+    equipment: ['Barbell', 'Squat rack'],
     difficulty: 'Intermediate',
     muscles_worked: ['Quads', 'Glutes', 'Hamstrings', 'Core'],
     how_to: [
@@ -203,7 +222,7 @@ const EXERCISES = [
   {
     name: 'Barbell Bench Press',
     category: 'Push',
-    equipment: 'Barbell',
+    equipment: ['Barbell', 'Bench'],
     difficulty: 'Intermediate',
     muscles_worked: ['Chest', 'Triceps', 'Front delts'],
     how_to: [
@@ -218,7 +237,7 @@ const EXERCISES = [
   {
     name: 'Incline Dumbbell Press',
     category: 'Push',
-    equipment: 'Dumbbell',
+    equipment: ['Dumbbells', 'Adjustable bench'],
     difficulty: 'Intermediate',
     muscles_worked: ['Upper chest', 'Front delts', 'Triceps'],
     how_to: [
@@ -232,7 +251,7 @@ const EXERCISES = [
   {
     name: 'Overhead Press',
     category: 'Push',
-    equipment: 'Barbell',
+    equipment: ['Barbell', 'Squat rack'],
     difficulty: 'Intermediate',
     muscles_worked: ['Shoulders', 'Triceps', 'Upper chest'],
     how_to: [
@@ -260,7 +279,9 @@ const EXERCISES = [
   {
     name: 'Dips',
     category: 'Push',
-    equipment: 'Bodyweight',
+    // OR — dips can be done on a Dip station or a Bench (bench dips); the one
+    // deliberate multi-item group in the seed data (decision #28).
+    equipment: [['Dip station', 'Bench']],
     difficulty: 'Intermediate',
     muscles_worked: ['Chest', 'Triceps', 'Front delts'],
     how_to: [
@@ -288,7 +309,7 @@ const EXERCISES = [
   {
     name: 'Skullcrusher',
     category: 'Push',
-    equipment: 'EZ-bar',
+    equipment: ['EZ-bar', 'Bench'],
     difficulty: 'Intermediate',
     muscles_worked: ['Triceps'],
     how_to: [

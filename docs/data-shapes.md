@@ -24,7 +24,7 @@ The user-built movement database.
 | `id` | TEXT PK | `crypto.randomUUID()` |
 | `name` | TEXT | required |
 | `category` | TEXT | one of `Strength · Push · Pull · Legs · Cardio · Mobility`, nullable |
-| `equipment` | TEXT | free text, nullable |
+| `equipment` | TEXT (JSON `string[][]`) | **decision #28** (restores #25's AND-of-ORs, reversing #26's flat collapse) — `equipment_groups`: the **outer array is AND** (every group required, "used together"), each **inner array is OR** (any one item — an exercise-specific alternative — satisfies that group). e.g. Barbell Bench Press → `[["Barbell"],["Bench"]]` (needs a Barbell AND a Bench); Dips → `[["Dip Station","Bench"]]` (Dip Station OR Bench). `[]` = bodyweight/no equipment. This coexists with the managed Equipment `substitutes[]` (decision #24, global "also counts as") — per-exercise OR groups express alternatives specific to *that* movement, which central substitutes can't. `exerciseDoableAtGym` expands the gym's equipment via managed substitutes, then requires at least one item per group (OR), all groups (AND). Stores equipment **names** (strings), not ids — no FK, consistent with decisions #23/#24. Cleaned on write: every item trimmed, blanks dropped, deduped within a group, empty groups dropped. A **one-time boot data migration** (`server/db.js`) normalizes any pre-existing shape in this column to the grouped form: a legacy bare scalar (e.g. `"Barbell"`) → `[["Barbell"]]` (blank/`"None"`/`"Bodyweight"`/`null` → `[]`); decision #26's flat `string[]` → each item its own required group, e.g. `["Barbell","Bench"]` → `[["Barbell"],["Bench"]]`; a row already grouped `string[][]` is left untouched. Idempotent — safe to re-run on every boot. The API returns `equipment_groups` (source of truth) plus a derived **read-only `equipment` summary string** (`formatEquipmentGroups`, e.g. `"Barbell + Bench"`, `"Dip Station or Bench"`, `"Bodyweight"` when empty) for display; writes always go through `equipment_groups`, never `equipment`. |
 | `difficulty` | TEXT | free text (e.g. `Beginner/Intermediate/Advanced`), nullable |
 | `demo_file` | TEXT | bare filename on disk under `server/media/`; **never returned by the API** |
 | `image` | TEXT | optional small thumbnail reference/URL, nullable |
@@ -189,7 +189,14 @@ user reviews it in the form and hits Save via the normal `POST`/`PUT`. The sugge
 ```jsonc
 {
   "category": "Push" | null,          // one of Strength|Push|Pull|Legs|Cardio|Mobility, or null
-  "equipment": "Barbell" | null,
+  "equipment_groups": [["Barbell"], ["Bench"]],  // decision #28 — AND-of-ORs string[][]: outer array
+                                       // = AND (every group required), inner array = OR (any one
+                                       // alternative satisfies it), e.g. [["Dip Station","Bench"]] for
+                                       // Dips. [] means bodyweight/no equipment. Cleaned the same way a
+                                       // saved exercise's equipment_groups is (trim/dedupe-within-group/
+                                       // drop-empty-groups); lenient — an item that doesn't match an
+                                       // offered managed-equipment name is still kept, since the user
+                                       // reviews/edits the suggestion before saving.
   "difficulty": "Intermediate" | null,
   "muscles_worked": ["Chest", "Triceps"],
   "how_to": ["Lie flat...", "Unrack...", "Lower...", "Press up."],
@@ -214,7 +221,13 @@ that produce them.
   "id": "uuid",
   "name": "Barbell Bench Press",
   "category": "Push",
-  "equipment": "Barbell",
+  "equipment_groups": [["Barbell"], ["Bench"]], // decision #28 — AND-of-ORs string[][], the source of
+                                       // truth: outer array = AND (every group required), inner array
+                                       // = OR (any one alternative satisfies it); [] = bodyweight/no
+                                       // equipment. Coexists with the managed Equipment `substitutes[]`
+                                       // (decision #24, global "also counts as").
+  "equipment": "Barbell + Bench", // derived, read-only summary string (formatEquipmentGroups) — never
+                                       // written to; e.g. "Dip Station or Bench", "Bodyweight" when [].
   "difficulty": "Intermediate",
   "muscles_worked": ["Chest", "Triceps", "Front delts"],
   "how_to": ["Lie flat, feet planted...", "Unrack and hold...", "..."],

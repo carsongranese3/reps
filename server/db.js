@@ -243,10 +243,72 @@ function ensureTable(name, def) {
   }
 }
 
+// One-time data migration (decision #28 — reverses #26): exercises.equipment
+// is restored to a JSON string[][] column (AND-of-ORs groups) — same TEXT
+// column, grouped shape. This migration converts ANY prior shape straight to
+// string[][]:
+//   - a legacy bare scalar ("Barbell")  -> [["Barbell"]] (blank/None/Bodyweight -> [])
+//   - #26's flat string[]              -> each item its own required group,
+//                                          e.g. ["Barbell","Bench"] -> [["Barbell"],["Bench"]]
+//   - an already-grouped string[][]    -> left untouched (idempotent)
+// The idempotent ADD-COLUMN migration above only adds missing columns, it
+// never transforms existing values, so we scan every row here. Detecting
+// "already grouped" (every parsed element is itself an array) keeps this safe
+// to re-run on every boot without double-processing. Item order is preserved
+// throughout.
+function migrateEquipmentToGroups() {
+  const rows = db.prepare('SELECT id, equipment FROM exercises').all();
+  const update = db.prepare('UPDATE exercises SET equipment = ? WHERE id = ?');
+  const cleanGroup = (group) => {
+    const seen = new Set();
+    const out = [];
+    for (const raw of group) {
+      const s = typeof raw === 'string' ? raw.trim() : '';
+      if (s && !seen.has(s)) {
+        seen.add(s);
+        out.push(s);
+      }
+    }
+    return out;
+  };
+  const upgrade = db.transaction((rowsToUpgrade) => {
+    for (const row of rowsToUpgrade) {
+      let parsed = null;
+      let isValidJsonArray = false;
+      if (row.equipment != null) {
+        try {
+          const candidate = JSON.parse(row.equipment);
+          if (Array.isArray(candidate)) {
+            parsed = candidate;
+            isValidJsonArray = true;
+          }
+        } catch {
+          // not valid JSON -> definitely a legacy scalar, needs upgrading
+        }
+      }
+
+      let groups;
+      if (isValidJsonArray) {
+        const alreadyGrouped = parsed.every((item) => Array.isArray(item));
+        if (alreadyGrouped) continue; // idempotent: nothing to do
+        // Flat string[] (decision #26) -> each item its own required group.
+        groups = parsed.map((item) => cleanGroup([item])).filter((g) => g.length);
+      } else {
+        const raw = row.equipment == null ? '' : String(row.equipment).trim();
+        groups = !raw || /^(none|bodyweight)$/i.test(raw) ? [] : [[raw]];
+      }
+      update.run(JSON.stringify(groups), row.id);
+    }
+  });
+  upgrade(rows);
+}
+
 export function migrate() {
   for (const [name, def] of Object.entries(TABLES)) {
     ensureTable(name, def);
   }
+
+  migrateEquipmentToGroups();
 
   // Indexes (safe to (re)create every boot).
   db.exec(`

@@ -45,6 +45,29 @@ const asStringArray = (v) =>
 const asNumberArray = (v) =>
   (Array.isArray(v) ? v : []).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n >= 0);
 
+// equipment_groups (decision #28 — AND-of-ORs): outer array = AND (every
+// group required), inner array = OR (any one alternative satisfies it).
+// Accepts a grouped `equipment_groups` array directly, or a legacy flat
+// `equipment` string[] (decision #26 — each item becomes its own required
+// single-item group), or a bare legacy scalar `equipment` string ("Barbell"
+// -> [["Barbell"]]; blank/"None"/"Bodyweight" -> []) so older import files
+// still work.
+function asEquipmentGroups(ex) {
+  if (Array.isArray(ex.equipment_groups)) {
+    return ex.equipment_groups
+      .map((g) => asStringArray(Array.isArray(g) ? g : [g]))
+      .filter((g) => g.length);
+  }
+  if (Array.isArray(ex.equipment)) {
+    return ex.equipment
+      .map((item) => asStringArray(Array.isArray(item) ? item : [item]))
+      .filter((g) => g.length);
+  }
+  const legacy = String(ex.equipment ?? '').trim();
+  if (!legacy || /^(none|bodyweight)$/i.test(legacy)) return [];
+  return [[legacy]];
+}
+
 const errors = [];
 const warnings = [];
 const clean = [];
@@ -55,16 +78,23 @@ list.forEach((ex, i) => {
 
   const name = String(ex.name ?? '').trim();
   const category = String(ex.category ?? '').trim();
-  const equipment = String(ex.equipment ?? '').trim();
   const difficulty = String(ex.difficulty ?? '').trim();
   const muscles_worked = asStringArray(ex.muscles_worked);
   const how_to = asStringArray(ex.how_to);
   const step_times = asNumberArray(ex.step_times);
   const tags = asStringArray(ex.tags);
+  const equipment_groups = asEquipmentGroups(ex);
+  // Still require SOME equipment info in the source row (the grouped
+  // equipment_groups array, the legacy flat equipment array, or the legacy
+  // scalar equipment string) — an empty [] result is only valid if the row
+  // explicitly said so (e.g. "Bodyweight"/"None", or equipment_groups: []),
+  // not because the field was missing entirely.
+  const hasEquipmentField =
+    Object.prototype.hasOwnProperty.call(ex, 'equipment') || Object.prototype.hasOwnProperty.call(ex, 'equipment_groups');
 
   if (!name) errors.push(`${where}: missing "name"`);
   if (!category) errors.push(`${where}: missing "category"`);
-  if (!equipment) errors.push(`${where}: missing "equipment"`);
+  if (!hasEquipmentField) errors.push(`${where}: missing "equipment_groups" (or legacy "equipment")`);
   if (!difficulty) errors.push(`${where}: missing "difficulty"`);
   if (muscles_worked.length === 0) errors.push(`${where}: "muscles_worked" is empty`);
   if (how_to.length < 2) errors.push(`${where}: "how_to" needs at least 2 steps`);
@@ -79,7 +109,7 @@ list.forEach((ex, i) => {
   clean.push({
     name,
     category,
-    equipment,
+    equipment_groups,
     difficulty,
     muscles_worked,
     how_to,
@@ -132,10 +162,10 @@ const apply = db.transaction((rows) => {
     const existing = findByName.get(ex.name);
     const j = (v) => JSON.stringify(v);
     if (existing) {
-      update.run(ex.category, ex.equipment, ex.difficulty, j(ex.muscles_worked), j(ex.how_to), j(ex.step_times), j(ex.tags), ts, existing.id);
+      update.run(ex.category, j(ex.equipment_groups), ex.difficulty, j(ex.muscles_worked), j(ex.how_to), j(ex.step_times), j(ex.tags), ts, existing.id);
       updated++;
     } else {
-      insert.run(crypto.randomUUID(), ex.name, ex.category, ex.equipment, ex.difficulty, j(ex.muscles_worked), j(ex.how_to), j(ex.step_times), j(ex.tags), ts, ts);
+      insert.run(crypto.randomUUID(), ex.name, ex.category, j(ex.equipment_groups), ex.difficulty, j(ex.muscles_worked), j(ex.how_to), j(ex.step_times), j(ex.tags), ts, ts);
       inserted++;
     }
   }

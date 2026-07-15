@@ -11,7 +11,10 @@ process.env.REPS_MEDIA_DIR = path.join(os.tmpdir(), `reps-test-serialize-media-$
 
 const {
   safeParseArray,
+  safeParseEquipmentGroups,
   normalizeExerciseBody,
+  normalizeEquipmentGroups,
+  formatEquipmentGroups,
   rowToExercise,
   normalizeWorkoutBody,
   normalizeWorkoutExercises,
@@ -43,7 +46,7 @@ describe('exercise normalize -> row -> rowToExercise round trip', () => {
     const body = normalizeExerciseBody({
       name: '  Barbell Bench Press  ',
       category: 'Push',
-      equipment: 'Barbell',
+      equipment_groups: [['Barbell'], ['Bench']],
       difficulty: 'Intermediate',
       muscles_worked: ['Chest', ' Triceps ', ''],
       how_to: ['Step one.', 'Step two.'],
@@ -53,13 +56,14 @@ describe('exercise normalize -> row -> rowToExercise round trip', () => {
 
     expect(body.name).toBe('Barbell Bench Press');
     expect(body.muscles_worked).toEqual(['Chest', 'Triceps']);
+    expect(body.equipment_groups).toEqual([['Barbell'], ['Bench']]);
 
     // Simulate the DB round trip: JSON.stringify on write, JSON.parse on read.
     const row = {
       id: 'ex1',
       name: body.name,
       category: body.category,
-      equipment: body.equipment,
+      equipment: JSON.stringify(body.equipment_groups),
       difficulty: body.difficulty,
       demo_file: null,
       image: body.image,
@@ -79,6 +83,10 @@ describe('exercise normalize -> row -> rowToExercise round trip', () => {
     expect(out.tags).toEqual(['compound']);
     expect(out.has_demo).toBe(false);
     expect(out).not.toHaveProperty('demo_file');
+    // equipment_groups (decision #28) is the source of truth; `equipment` is a
+    // derived read-only summary string.
+    expect(out.equipment_groups).toEqual([['Barbell'], ['Bench']]);
+    expect(out.equipment).toBe('Barbell + Bench');
   });
 
   it('drops mismatched-length step_times as garbage', () => {
@@ -108,6 +116,167 @@ describe('exercise normalize -> row -> rowToExercise round trip', () => {
   it('rowToExercise defaults a missing video_url column to null', () => {
     const row = { id: 'ex1', name: 'X', muscles_worked: '[]', how_to: '[]', step_times: '[]', tags: '[]', created_at: 't1', updated_at: 't1' };
     expect(rowToExercise(row).video_url).toBeNull();
+  });
+});
+
+describe('equipment_groups (decision #28 — AND-of-ORs, restores #25, reverses #26)', () => {
+  it('normalizeExerciseBody: an AND-of-ORs grouped list', () => {
+    const body = normalizeExerciseBody({ name: 'X', equipment_groups: [['Barbell'], ['Squat Rack']] });
+    expect(body.equipment_groups).toEqual([['Barbell'], ['Squat Rack']]);
+  });
+
+  it('normalizeEquipmentGroups: trims and drops blank/non-string items, dedupes within a group, drops empty groups', () => {
+    expect(
+      normalizeEquipmentGroups([
+        [' Barbell ', 'Barbell', '', null, 42, '  '],
+        ['Bench'],
+        ['', null],
+      ])
+    ).toEqual([['Barbell'], ['Bench']]);
+  });
+
+  it('normalizeEquipmentGroups: a bare flat array (not array-of-arrays) treats each item as its own group', () => {
+    expect(normalizeEquipmentGroups(['Barbell', 'Bench'])).toEqual([['Barbell'], ['Bench']]);
+  });
+
+  it('empty/missing equipment_groups normalizes to []', () => {
+    const body = normalizeExerciseBody({ name: 'X' });
+    expect(body.equipment_groups).toEqual([]);
+  });
+
+  it('normalizeEquipmentGroups: non-array input coerces to []', () => {
+    expect(normalizeEquipmentGroups('Barbell')).toEqual([]);
+    expect(normalizeEquipmentGroups(null)).toEqual([]);
+    expect(normalizeEquipmentGroups(undefined)).toEqual([]);
+  });
+
+  it('rowToExercise coerces a legacy bare scalar row on read: "Barbell" -> [["Barbell"]]', () => {
+    const row = {
+      id: 'ex1',
+      name: 'X',
+      equipment: 'Barbell', // legacy scalar, not JSON
+      muscles_worked: '[]',
+      how_to: '[]',
+      step_times: '[]',
+      tags: '[]',
+      created_at: 't1',
+      updated_at: 't1',
+    };
+    const out = rowToExercise(row);
+    expect(out.equipment_groups).toEqual([['Barbell']]);
+    expect(out.equipment).toBe('Barbell');
+  });
+
+  it('rowToExercise coerces legacy "Bodyweight"/"None"/blank scalars to []', () => {
+    const base = { id: 'ex1', name: 'X', muscles_worked: '[]', how_to: '[]', step_times: '[]', tags: '[]', created_at: 't1', updated_at: 't1' };
+    expect(rowToExercise({ ...base, equipment: 'Bodyweight' }).equipment_groups).toEqual([]);
+    expect(rowToExercise({ ...base, equipment: 'None' }).equipment_groups).toEqual([]);
+    expect(rowToExercise({ ...base, equipment: '' }).equipment_groups).toEqual([]);
+    expect(rowToExercise({ ...base, equipment: null }).equipment_groups).toEqual([]);
+    expect(rowToExercise({ ...base, equipment: null }).equipment).toBe('Bodyweight');
+  });
+
+  it('rowToExercise upgrades a decision #26 flat string[] row: each item its own required group', () => {
+    const row = {
+      id: 'ex1',
+      name: 'X',
+      equipment: JSON.stringify(['Barbell', 'Bench']),
+      muscles_worked: '[]',
+      how_to: '[]',
+      step_times: '[]',
+      tags: '[]',
+      created_at: 't1',
+      updated_at: 't1',
+    };
+    const out = rowToExercise(row);
+    expect(out.equipment_groups).toEqual([['Barbell'], ['Bench']]);
+    expect(out.equipment).toBe('Barbell + Bench');
+  });
+
+  it('rowToExercise reads an already-grouped string[][] row as-is (idempotent)', () => {
+    const row = {
+      id: 'ex1',
+      name: 'X',
+      equipment: JSON.stringify([['Dip Station', 'Bench']]),
+      muscles_worked: '[]',
+      how_to: '[]',
+      step_times: '[]',
+      tags: '[]',
+      created_at: 't1',
+      updated_at: 't1',
+    };
+    const out = rowToExercise(row);
+    expect(out.equipment_groups).toEqual([['Dip Station', 'Bench']]);
+    // The canonical formatter always parenthesizes a multi-item OR group, even
+    // as the sole group (matches the client formatter byte-for-byte).
+    expect(out.equipment).toBe('(Dip Station or Bench)');
+  });
+
+  it('safeParseEquipmentGroups: an already-grouped array JSON passes through cleaned', () => {
+    expect(safeParseEquipmentGroups(JSON.stringify([['Barbell'], ['Bench']]))).toEqual([['Barbell'], ['Bench']]);
+  });
+
+  it('safeParseEquipmentGroups: upgrades a legacy flat string[] JSON value', () => {
+    expect(safeParseEquipmentGroups(JSON.stringify(['Barbell', 'Bench']))).toEqual([['Barbell'], ['Bench']]);
+  });
+
+  // Robustness (QA): garbage inputs must never throw. The write path
+  // (normalizeEquipmentGroups) keeps only clean strings; the read path
+  // (safeParseEquipmentGroups) defensively coerces any prior/tampered column shape.
+  it('normalizeEquipmentGroups: drops non-string garbage without crashing', () => {
+    expect(normalizeEquipmentGroups([[42, {}, ['nested'], NaN, null, undefined]])).toEqual([]);
+    expect(normalizeEquipmentGroups([[{ a: 1 }, 'Barbell', 7]])).toEqual([['Barbell']]);
+  });
+
+  it('normalizeEquipmentGroups: handles a huge grouped array without crashing', () => {
+    const huge = Array.from({ length: 100000 }, (_, i) => ['x' + (i % 3)]);
+    expect(normalizeEquipmentGroups(huge)).toHaveLength(100000);
+  });
+
+  it('safeParseEquipmentGroups: deeply-nested / mixed / huge JSON never throws', () => {
+    // one level of grouping only — deeper nesting yields no strings, not a crash
+    expect(safeParseEquipmentGroups(JSON.stringify([[['Barbell']], [['Bench']]]))).toEqual([]);
+    // string[][] with stray non-strings inside groups have them dropped
+    expect(safeParseEquipmentGroups(JSON.stringify([['Barbell', 7], [null, 'Bench']]))).toEqual([['Barbell'], ['Bench']]);
+    // flat array with mixed junk keeps only string items, each its own group
+    expect(safeParseEquipmentGroups(JSON.stringify(['Barbell', 5, null, { x: 1 }]))).toEqual([['Barbell']]);
+    // a huge flat array does not throw — each item upgrades to its own
+    // single-item group (decision #26 -> #28), so all 100000 groups survive.
+    const hugeJson = JSON.stringify(Array.from({ length: 100000 }, (_, i) => 'x' + (i % 2)));
+    expect(safeParseEquipmentGroups(hugeJson)).toHaveLength(100000);
+  });
+
+  it('safeParseEquipmentGroups: bare non-array JSON (number/object) coerces defensively, no throw', () => {
+    // Only reachable if the column was tampered/legacy — the write path can never
+    // store these. Must not crash; result is a best-effort scalar coercion.
+    expect(safeParseEquipmentGroups('42')).toEqual([['42']]);
+    expect(safeParseEquipmentGroups(JSON.stringify({ foo: 'bar' }))).toEqual([['[object Object]']]);
+  });
+});
+
+describe('formatEquipmentGroups (canonical summary formatter, decision #28)', () => {
+  it('formats an AND of single-item groups joined with " + "', () => {
+    expect(formatEquipmentGroups([['Barbell'], ['Bench']])).toBe('Barbell + Bench');
+  });
+
+  it('formats a multi-item OR group with parens and "or" (even as the sole group)', () => {
+    expect(formatEquipmentGroups([['Dip Station', 'Bench']])).toBe('(Dip Station or Bench)');
+  });
+
+  it('formats a mix of AND and OR groups', () => {
+    expect(formatEquipmentGroups([['Barbell'], ['Flat Bench', 'Adjustable Bench']])).toBe(
+      'Barbell + (Flat Bench or Adjustable Bench)'
+    );
+  });
+
+  it('returns "Bodyweight" for an empty/all-blank input', () => {
+    expect(formatEquipmentGroups([])).toBe('Bodyweight');
+    expect(formatEquipmentGroups([[''], ['   ']])).toBe('Bodyweight');
+    expect(formatEquipmentGroups(null)).toBe('Bodyweight');
+  });
+
+  it('trims items before filtering blanks', () => {
+    expect(formatEquipmentGroups([[' Barbell ', '  '], ['Bench']])).toBe('Barbell + Bench');
   });
 });
 

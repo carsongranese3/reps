@@ -49,7 +49,17 @@ Body:
 {
   "name": "Barbell Bench Press",       // required, non-empty after trim
   "category": "Push",                   // optional; if present must be one of Strength|Push|Pull|Legs|Cardio|Mobility
-  "equipment": "Barbell",               // optional
+  "equipment_groups": [["Barbell"], ["Bench"]], // optional, AND-of-ORs string[][] — decision #28
+                                         // (restores #25, reverses #26's flat collapse): outer array =
+                                         // AND (every group required, "used together"), inner array =
+                                         // OR (any one item — an exercise-specific alternative —
+                                         // satisfies that group), e.g. [["Dip Station","Bench"]] for
+                                         // Dips. This coexists with the managed Equipment `substitutes[]`
+                                         // (decision #24, a global "also counts as"). [] (or omitted) =
+                                         // bodyweight/no equipment. Cleaned on write: every item trimmed,
+                                         // blanks dropped, deduped within a group, empty groups dropped.
+                                         // Writes always go through `equipment_groups` — the read-only
+                                         // `equipment` summary string on the response is never accepted.
   "difficulty": "Intermediate",         // optional
   "muscles_worked": ["Chest","Triceps"],// optional, string[]
   "how_to": ["Step 1", "Step 2"],       // optional, ordered string[]
@@ -69,7 +79,10 @@ Update an exercise in place (same id, no duplicate). Body: same shape as `POST`,
 omit keeps its current value (patch semantics) — `name` still can't be blanked out. `draft_token`
 may also be supplied here to replace the demo. `video_url` follows the same patch semantics: omit
 it to keep the current value, send `null`/an empty string to clear it, or send a non-http(s) value
-to have it dropped to `null`.
+to have it dropped to `null`. `equipment_groups` follows the same patch semantics: omit it to keep
+the current stored groups, or send a full `string[][]` to replace it entirely (there is no
+partial/per-group merge — sending `equipment_groups` replaces the whole thing). A PUT that omits
+`equipment_groups` (e.g. a name-only or favorite-only patch) never wipes the stored equipment.
 
 Response: `200` → `Exercise` · `400` invalid `name`/`category` · `404` if not found.
 
@@ -97,7 +110,12 @@ Response `200`:
 {
   "suggestion": {
     "category": "Push",                 // one of Strength|Push|Pull|Legs|Cardio|Mobility, or null if Gemini's guess didn't match
-    "equipment": "Barbell",             // string or null
+    "equipment_groups": [["Barbell"], ["Bench"]],  // AND-of-ORs string[][] (decision #28) — cleaned the
+                                         // same way a saved exercise's equipment_groups is (trim/dedupe-
+                                         // within-group/drop-empty-groups); [] if Gemini says the exercise
+                                         // needs no equipment. Lenient: an item that doesn't match an
+                                         // offered managed-equipment name is still kept since the user
+                                         // reviews/edits before saving.
     "difficulty": "Intermediate",       // string or null (free text; Gemini is steered toward Beginner|Intermediate|Advanced)
     "muscles_worked": ["Chest", "Triceps"],
     "how_to": ["Lie flat, feet planted...", "Unrack and hold...", "Lower to the chest...", "Press back up."],
@@ -619,7 +637,9 @@ npm install
 cp server/.env.example server/.env   # optional — only needed for the Gemini autofill feature; fill in GEMINI_API_KEY
 npm run seed        # idempotent — seeds exercises/workouts/plan if not already present
 npm run dev:server  # Express API on :4000 (or `npm run dev` to also start the Vite client)
-npm test            # vitest — 180 tests across serialization, CRUD (workouts/exercises/gyms/equipment),
+npm test            # vitest — tests across serialization, CRUD (workouts/exercises/gyms/equipment),
                      # plan, sessions/PRs (incl. PUT edit + PR-recompute-excluding-self), week/streak,
-                     # schedule, Gemini autofill, equipment seed idempotency + substitutes backfill
+                     # schedule, Gemini autofill, equipment seed idempotency + substitutes backfill,
+                     # exercise equipment_groups (decision #28) as an AND-of-ORs string[][] + boot
+                     # migration upgrading any prior shape (legacy scalar, or #26's flat string[])
 ```

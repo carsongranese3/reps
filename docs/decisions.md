@@ -220,3 +220,104 @@ Resolves the Open Questions in `specs/reps.md §7`.
       item's `substitutes` (from the managed equipment list) and requires an exact (normalized)
       match — replacing the old fuzzy substring loose-match. Bodyweight/None always doable; "Any
       gym" always doable.
+
+25. **Exercise equipment → multi-equipment "groups" (AND-of-ORs).**
+    - **Problem:** an exercise needed a *single* equipment string, so it couldn't say "needs a
+      Barbell **and** a Bench" or "a Flat Bench **or** an Adjustable bench".
+    - **Model — AND-of-ORs (CNF).** Exercise equipment becomes **`equipment_groups: string[][]`**:
+      the outer array is **AND** (every group is required), each inner array is **OR** (any one item
+      in it — substitutes — satisfies that group). e.g. Barbell Bench Press =
+      `[["Barbell"], ["Flat Bench", "Adjustable Bench"]]` → needs a Barbell **and**
+      (Flat Bench **or** Adjustable Bench). Empty `[]` = bodyweight / no equipment.
+    - **Storage:** the exercise `equipment` scalar TEXT column is **repurposed to a JSON column**
+      holding `string[][]`. `normalizeExerciseBody` cleans it (trim/drop-blank items, drop empty
+      groups, dedupe within a group); `rowToExercise` `safeParseArray`s it back. A **one-time boot
+      data migration** in `server/db.js` converts every legacy scalar value (`"Barbell"`) →
+      `[["Barbell"]]` (empty/None → `[]`); `rowToExercise` also defensively coerces any still-legacy
+      scalar on read. Items store equipment **names** (not ids) — keeps the existing string-match,
+      no-FK decoupling from equipment deletion (consistent with #23/#24).
+    - **Backward-compat display:** `rowToExercise` also returns a derived read-only
+      **`equipment` summary string** ("Barbell + (Flat Bench or Adjustable Bench)", "Bodyweight" when
+      empty) so existing display sites keep working. `equipment` is **never written** — writes go
+      through `equipment_groups`.
+    - **Gym doability (`client/src/lib/equipment.ts`):** `exerciseDoableAtGym` now takes
+      `equipment_groups`. For **each** group it expands the gym's equipment via managed `substitutes`
+      (#24) and requires **at least one** item in the group to be provided (OR); the exercise is
+      doable only if **all** groups are satisfied (AND). Empty groups → always doable.
+      `equipmentNeedsLabel` returns the same summary string for the "not available" tooltip.
+    - **Exercise form (`ExerciseFormPage.tsx`):** the single equipment input becomes a **grouped-rows
+      builder** — "Add required equipment" adds an AND row; within a row "+ or…" adds substitutes.
+      Options come from the managed Equipment list (+ "Bodyweight"). Shows the live summary.
+    - **Gemini autofill:** the prompt asks for `equipment_groups` (array of OR-groups, names spelled
+      exactly from the managed list); `parseAutofillResponse` validates the nested shape. Suggestion
+      is reviewed/edited before saving as before.
+    - **Docs updated:** `docs/data-shapes.md` (exercises `equipment_groups` column + derived
+      `equipment`; Gemini suggestion shape) and `docs/api.md` (request/response shapes). Seed +
+      `importExercises.js` write `equipment_groups`.
+
+26. **Simplify exercise equipment to a flat required list — drop the per-exercise OR groups.**
+    - **Supersedes the OR dimension of #25.** The per-exercise "substitute" picker (OR-within-a-group)
+      is **redundant** with the managed Equipment `substitutes[]` ("also counts as", #24): alternates
+      are configured **once** on the equipment item, not repeated on every exercise. So an exercise's
+      equipment collapses from `string[][]` (AND-of-ORs) to a flat **`equipment: string[]`** — the
+      list of pieces the exercise needs, **all required (AND / used together)**.
+    - **Substitution stays, centrally.** `exerciseDoableAtGym` still expands the gym's equipment via
+      each managed item's `substitutes` (#24), then requires **every** item in `equipment` to be
+      provided. e.g. an exercise needing `["Barbell","Bench"]` is doable at a gym with a Barbell + an
+      Adjustable Bench (because Adjustable Bench substitutes Bench). No per-exercise alternatives.
+    - **Storage:** the `equipment` JSON column now holds `string[]`. A one-time idempotent boot
+      migration flattens any existing `string[][]` (from #25) to `string[]` (single-item groups →
+      the item; the clean-slate DB has no genuine multi-item OR groups to lose). `normalizeExerciseBody`
+      cleans a flat `string[]` (trim/dedupe/drop-blank); `rowToExercise` returns `equipment: string[]`.
+      The derived summary string from #25 is dropped — a flat list renders directly (joined with " + ").
+    - **UI:** the exercise form's grouped-rows builder loses "+ or…" and the "or" rendering — it's a
+      simple list of required-equipment inputs ("+ Add equipment"). Detail page shows the joined list.
+    - **Gemini** suggests a flat `equipment: string[]` of required names from the managed list.
+    - Docs (`data-shapes.md`, `api.md`) updated to `equipment: string[]`.
+
+27. **History: manually log a past ("forgot to track") workout.**
+    - **New "Add workout" action on History** (header button next to the H1) opens a manual-log form
+      → new route `/history/new` (page `AddSessionPage`). For logging a workout you did but forgot to
+      track live — **not** a new tracking mode.
+    - **Flow (pick a saved workout):** choose a **date** (defaults to today; may be in the past) and a
+      **saved workout**. Picking the workout **prefills** its exercises + target sets (same transform
+      as live tracking's `buildActiveSessionFromWorkout`), then you enter actual **weight × reps** per
+      set (rows reuse `SessionDetailPage`'s edit-mode set UI; add/remove set), sets default to
+      completed. Save → `useCreateSession` with `{ workout_id, date, entries }`.
+    - **No backend change** — `POST /api/sessions` already accepts a client-supplied `date`
+      (backdating) and snapshots `workout_title`/`workout_category`, and computes
+      `total_sets`/`total_volume`/`prs` server-side. `useCreateSession` already invalidates
+      `sessions`/`week`/`stats`, so the backdated session lands correctly in History, This Week, and
+      the streak (server buckets by `date` slice, decision #12).
+    - **Known limitation (documented, not fixed):** `prs` are computed against **all** sessions in the
+      DB at insert time, not chronologically (decision #10). A backdated entry inserted after later,
+      heavier sessions may get an incorrect PR flag, and existing later sessions aren't retroactively
+      recomputed. Accepted tradeoff — surfaced to the user, not silently patched.
+    - Freeform (no saved workout) logging is a possible follow-up; the API already supports it via the
+      `workout_title` fallback, but this iteration ships pick-a-saved-workout only.
+
+28. **Restore per-exercise OR — back to AND-of-ORs `equipment_groups` (reverses #26).**
+    - **Why the reversal:** #26 removed per-exercise alternatives assuming central `substitutes` (#24)
+      covered them. But some alternatives are **exercise-specific**, not global equivalences — e.g.
+      **Dips** can be done on a **Dip Station _or_ a Bench** (bench dips), yet a Bench is NOT globally a
+      Dip Station. Central substitutes can't express that; per-exercise OR can. So we restore #25's
+      model. The two mechanisms **coexist**: central `substitutes` = global "also counts as";
+      per-exercise OR = alternatives that only apply to that movement.
+    - **Model = AND-of-ORs.** Exercise equipment is **`equipment_groups: string[][]`**: outer array =
+      **AND** (every group required, "used together"), inner array = **OR** (any one item — an
+      exercise-specific alternative — satisfies that group). Empty `[]` = bodyweight. e.g. Bench Press
+      = `[["Barbell"],["Bench"]]`; Dips = `[["Dip Station","Bench"]]`.
+    - **Storage / API:** the `equipment` JSON column holds `string[][]`. API returns
+      `equipment_groups` (source of truth) + a derived read-only `equipment` **summary string**
+      ("Barbell + Bench", "Dip Station or Bench") for display; writes go through `equipment_groups`.
+      One-time idempotent boot migration converts ANY prior shape → `string[][]`: legacy scalar →
+      `[["x"]]`; **#26 flat `string[]` → each item its own required group** `[["a"],["b"]]` (current
+      items are all "used together"); already-grouped `string[][]` → kept.
+    - **Gym doability:** for each group, the gym's equipment (expanded via managed `substitutes`, #24)
+      must provide **at least one** item (OR); the exercise is doable only if **all** groups are
+      satisfied (AND). Empty groups → always doable.
+    - **UI:** the exercise form's **grouped-rows** builder returns — "+ Add required equipment" adds an
+      AND row, "+ or…" adds an alternative within a row. Detail page + Build tooltip show the summary.
+    - **Gemini** suggests `equipment_groups`. Docs (`data-shapes.md`, `api.md`) back to the grouped
+      shape. **Data note:** after migration, the curated exercises stay as single-item groups except
+      **Dips → `[["Dip Station","Bench"]]`** (the OR the user asked for), set explicitly.

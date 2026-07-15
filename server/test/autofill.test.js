@@ -61,7 +61,7 @@ describe('POST /api/exercises/autofill — with a key present (fetch stubbed, no
   it('returns a suggestion shape on a well-formed upstream response', async () => {
     const payload = {
       category: 'Push',
-      equipment: 'Barbell',
+      equipment_groups: [['Barbell'], ['Bench']],
       difficulty: 'Intermediate',
       muscles_worked: ['Chest', 'Triceps'],
       how_to: ['Lie flat.', 'Lower the bar.', 'Press up.'],

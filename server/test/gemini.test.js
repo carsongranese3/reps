@@ -18,7 +18,7 @@ describe('parseAutofillResponse', () => {
   it('parses a clean JSON payload', () => {
     const raw = JSON.stringify({
       category: 'Push',
-      equipment: 'Barbell',
+      equipment_groups: [['Barbell'], ['Bench']],
       difficulty: 'Intermediate',
       muscles_worked: ['Chest', 'Triceps'],
       how_to: ['Lie on the bench.', 'Lower the bar.', 'Press up.'],
@@ -29,7 +29,7 @@ describe('parseAutofillResponse', () => {
     const out = parseAutofillResponse(raw);
     expect(out).toEqual({
       category: 'Push',
-      equipment: 'Barbell',
+      equipment_groups: [['Barbell'], ['Bench']],
       difficulty: 'Intermediate',
       muscles_worked: ['Chest', 'Triceps'],
       how_to: ['Lie on the bench.', 'Lower the bar.', 'Press up.'],
@@ -41,7 +41,7 @@ describe('parseAutofillResponse', () => {
   it('strips a ```json ... ``` markdown fence before parsing', () => {
     const raw = '```json\n' + JSON.stringify({
       category: 'Legs',
-      equipment: 'Bodyweight',
+      equipment_groups: [],
       difficulty: 'Beginner',
       muscles_worked: ['Quads'],
       how_to: ['Stand tall.', 'Squat down.', 'Stand back up.'],
@@ -51,6 +51,7 @@ describe('parseAutofillResponse', () => {
 
     const out = parseAutofillResponse(raw);
     expect(out.category).toBe('Legs');
+    expect(out.equipment_groups).toEqual([]);
     expect(out.video_url).toBeNull();
   });
 
@@ -92,6 +93,35 @@ describe('parseAutofillResponse', () => {
     expect(out.muscles_worked).toEqual([]);
     expect(out.how_to).toEqual([]);
     expect(out.tags).toEqual([]);
+    // equipment_groups missing entirely -> [] (lenient, never crashes)
+    expect(out.equipment_groups).toEqual([]);
+  });
+
+  it('cleans equipment_groups: trims, drops blanks/non-strings, dedupes within a group, drops empty groups', () => {
+    const raw = JSON.stringify({
+      category: 'Push',
+      equipment_groups: [[' Barbell ', 'Barbell', '', null], ['Bench']],
+    });
+    const out = parseAutofillResponse(raw);
+    expect(out.equipment_groups).toEqual([['Barbell'], ['Bench']]);
+  });
+
+  it('handles a genuine OR group (exercise-specific alternatives)', () => {
+    const raw = JSON.stringify({ category: 'Push', equipment_groups: [['Dip Station', 'Bench']] });
+    const out = parseAutofillResponse(raw);
+    expect(out.equipment_groups).toEqual([['Dip Station', 'Bench']]);
+  });
+
+  it('coerces a non-array equipment_groups (e.g. a stray legacy scalar) to []', () => {
+    const raw = JSON.stringify({ category: 'Push', equipment_groups: 'Barbell' });
+    const out = parseAutofillResponse(raw);
+    expect(out.equipment_groups).toEqual([]);
+  });
+
+  it('coerces a legacy flat equipment_groups array (each item its own group) via normalizeEquipmentGroups', () => {
+    const raw = JSON.stringify({ category: 'Push', equipment_groups: ['Barbell', 'Bench'] });
+    const out = parseAutofillResponse(raw);
+    expect(out.equipment_groups).toEqual([['Barbell'], ['Bench']]);
   });
 
   it('throws an AutofillError with code "parse" on invalid JSON', () => {

@@ -18,7 +18,15 @@ export interface Exercise {
   id: string;
   name: string;
   category: ExerciseCategory | null;
-  equipment: string | null;
+  /** AND-of-ORs equipment groups (decision #28, restores #25 — supersedes #26's flat list).
+   * Outer array = AND (every group required); inner array = OR (any one item — an
+   * exercise-specific alternative — satisfies that group). `[]` = bodyweight / no equipment.
+   * This is the source of truth for writes. */
+  equipment_groups: string[][];
+  /** Derived, read-only summary string of `equipment_groups` (e.g. "Barbell + Bench",
+   * "Dip Station or Bench", "Bodyweight" when empty). Never written — writes go through
+   * `equipment_groups`. */
+  equipment: string;
   difficulty: string | null;
   muscles_worked: string[];
   how_to: string[];
@@ -37,7 +45,7 @@ export interface Exercise {
 export interface ExerciseInput {
   name: string;
   category?: ExerciseCategory | null;
-  equipment?: string | null;
+  equipment_groups?: string[][];
   difficulty?: string | null;
   muscles_worked?: string[];
   how_to?: string[];
@@ -53,7 +61,7 @@ export interface ExerciseInput {
  * overwriting current values (decision #16). `video_url` is a YouTube demo link. */
 export interface ExerciseAutofillSuggestion {
   category: ExerciseCategory | null;
-  equipment: string | null;
+  equipment_groups: string[][];
   difficulty: string | null;
   muscles_worked: string[];
   how_to: string[];
