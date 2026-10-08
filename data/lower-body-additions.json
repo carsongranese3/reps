@@ -1,0 +1,844 @@
+{
+  "exercises": [
+    {
+      "name": "Front Squat",
+      "category": "Legs",
+      "equipment_groups": [["Barbell"],["Squat Rack"]],
+      "difficulty": "Advanced",
+      "muscles_worked": ["Quads", "Glutes", "Core"],
+      "how_to": [
+        "Rack the barbell across the front of your shoulders with elbows high.",
+        "Unrack, step back, and set feet shoulder-width apart.",
+        "Squat down keeping the torso upright until thighs reach parallel.",
+        "Drive through your heels to stand back up."
+      ],
+      "tags": ["barbell", "compound"]
+    },
+    {
+      "name": "Goblet Squat",
+      "category": "Legs",
+      "equipment_groups": [["Dumbbells","Kettlebells"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Quads", "Glutes", "Adductors"],
+      "how_to": [
+        "Hold a dumbbell or kettlebell vertically against your chest.",
+        "Stand with feet slightly wider than shoulder-width.",
+        "Squat down between your knees keeping the chest tall.",
+        "Push through your heels to return to standing."
+      ],
+      "tags": ["compound", "beginner"]
+    },
+    {
+      "name": "Hack Squat (Machine)",
+      "category": "Legs",
+      "equipment_groups": [["Hack Squat Machine"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Quads", "Glutes"],
+      "how_to": [
+        "Set your shoulders and back against the machine pads.",
+        "Place feet on the platform shoulder-width apart.",
+        "Release the safeties and lower until knees bend to about 90 degrees.",
+        "Press through your feet to extend the legs."
+      ],
+      "tags": ["machine", "quads"]
+    },
+    {
+      "name": "Bulgarian Split Squat",
+      "category": "Legs",
+      "equipment_groups": [["Bench"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Quads", "Glutes", "Hamstrings"],
+      "how_to": [
+        "Stand a couple feet in front of a bench facing away.",
+        "Place the top of your rear foot on the bench.",
+        "Lower straight down until your front thigh is parallel.",
+        "Drive through the front heel to return to the top."
+      ],
+      "tags": ["unilateral", "bodyweight"]
+    },
+    {
+      "name": "Reverse Lunges",
+      "category": "Legs",
+      "equipment_groups": [["Dumbbells"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Quads", "Glutes", "Hamstrings"],
+      "how_to": [
+        "Stand tall holding a dumbbell in each hand.",
+        "Step one foot back and lower until both knees bend to 90 degrees.",
+        "Drive through the front heel to return to standing.",
+        "Alternate legs on each rep."
+      ],
+      "tags": ["unilateral", "dumbbell"]
+    },
+    {
+      "name": "Forward Lunges",
+      "category": "Legs",
+      "equipment_groups": [["Dumbbells"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Quads", "Glutes", "Hamstrings"],
+      "how_to": [
+        "Stand tall holding a dumbbell in each hand.",
+        "Step one foot forward and lower until the rear knee nears the floor.",
+        "Push off the front foot to return to standing.",
+        "Alternate legs on each rep."
+      ],
+      "tags": ["unilateral", "dumbbell"]
+    },
+    {
+      "name": "Leg Extension (Machine)",
+      "category": "Legs",
+      "equipment_groups": [["Leg Extension Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Quads"],
+      "how_to": [
+        "Sit in the machine with your back against the pad.",
+        "Hook your shins behind the padded lever.",
+        "Extend your knees to straighten the legs fully.",
+        "Lower under control back to the start."
+      ],
+      "tags": ["machine", "isolation"]
+    },
+    {
+      "name": "Sissy Squat",
+      "category": "Legs",
+      "equipment_groups": [],
+      "difficulty": "Advanced",
+      "muscles_worked": ["Quads", "Core"],
+      "how_to": [
+        "Stand tall and hold a support for balance.",
+        "Rise onto the balls of your feet.",
+        "Lean back and bend the knees, lowering the torso and hips together.",
+        "Contract the quads to return to standing."
+      ],
+      "tags": ["bodyweight", "isolation"]
+    },
+    {
+      "name": "Step-Ups",
+      "category": "Legs",
+      "equipment_groups": [["Bench","Plyo Box"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Quads", "Glutes", "Hamstrings"],
+      "how_to": [
+        "Stand facing a bench or box at about knee height.",
+        "Place one full foot on top of the surface.",
+        "Drive through that heel to step up and stand tall.",
+        "Step back down under control and repeat."
+      ],
+      "tags": ["unilateral", "bodyweight"]
+    },
+    {
+      "name": "Box Squat",
+      "category": "Legs",
+      "equipment_groups": [["Barbell"],["Squat Rack"],["Bench","Plyo Box"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Quads", "Glutes", "Hamstrings"],
+      "how_to": [
+        "Set a box or bench behind you and rack the barbell on your upper back.",
+        "Unrack and stand just in front of the box.",
+        "Sit back and down until you lightly touch the box.",
+        "Drive through your heels to stand back up."
+      ],
+      "tags": ["barbell", "compound"]
+    },
+    {
+      "name": "Zercher Squat",
+      "category": "Legs",
+      "equipment_groups": [["Barbell"]],
+      "difficulty": "Advanced",
+      "muscles_worked": ["Quads", "Glutes", "Core"],
+      "how_to": [
+        "Hold the barbell cradled in the crooks of your elbows.",
+        "Stand with feet shoulder-width apart and chest tall.",
+        "Squat down keeping the elbows tucked and torso upright.",
+        "Drive up through your heels to stand."
+      ],
+      "tags": ["barbell", "compound"]
+    },
+    {
+      "name": "Wall Sit",
+      "category": "Legs",
+      "equipment_groups": [],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Quads", "Glutes"],
+      "how_to": [
+        "Stand with your back flat against a wall.",
+        "Slide down until your thighs are parallel to the floor.",
+        "Keep knees over ankles and hold the position.",
+        "Push back up the wall when finished."
+      ],
+      "tags": ["isometric", "bodyweight"]
+    },
+    {
+      "name": "Cyclist Squat (Heels Elevated)",
+      "category": "Legs",
+      "equipment_groups": [["Dumbbells"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Quads"],
+      "how_to": [
+        "Place your heels on a small plate or wedge.",
+        "Hold dumbbells at your sides or a single one at your chest.",
+        "Squat straight down keeping the torso upright.",
+        "Drive up through the balls of your feet to stand."
+      ],
+      "tags": ["quads", "dumbbell"]
+    },
+    {
+      "name": "Split Squat (Static)",
+      "category": "Legs",
+      "equipment_groups": [["Dumbbells"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Quads", "Glutes", "Hamstrings"],
+      "how_to": [
+        "Stand in a staggered stance holding dumbbells at your sides.",
+        "Keep the front foot flat and the rear heel lifted.",
+        "Lower straight down until the front thigh is parallel.",
+        "Press through the front heel to rise; finish reps, then switch legs."
+      ],
+      "tags": ["unilateral", "dumbbell"]
+    },
+    {
+      "name": "Stiff-Leg Deadlift",
+      "category": "Legs",
+      "equipment_groups": [["Barbell"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Hamstrings", "Glutes", "Lower Back"],
+      "how_to": [
+        "Hold a barbell in front of your thighs with a slight knee bend.",
+        "Hinge at the hips, pushing them back as you lower the bar.",
+        "Keep the bar close and back flat until you feel a hamstring stretch.",
+        "Drive the hips forward to stand tall."
+      ],
+      "tags": ["barbell", "hinge"]
+    },
+    {
+      "name": "Lying Leg Curl (Machine)",
+      "category": "Legs",
+      "equipment_groups": [["Leg Curl Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Hamstrings"],
+      "how_to": [
+        "Lie face down with your ankles under the padded lever.",
+        "Grip the handles and keep your hips pressed down.",
+        "Curl your heels toward your glutes.",
+        "Lower under control back to the start."
+      ],
+      "tags": ["machine", "isolation"]
+    },
+    {
+      "name": "Nordic Hamstring Curl",
+      "category": "Legs",
+      "equipment_groups": [],
+      "difficulty": "Advanced",
+      "muscles_worked": ["Hamstrings", "Glutes"],
+      "how_to": [
+        "Kneel upright with your ankles anchored under a fixed support.",
+        "Keep your body straight from knees to head.",
+        "Lower your torso toward the floor as slowly as possible.",
+        "Use your hands to catch and push back to the start."
+      ],
+      "tags": ["bodyweight", "eccentric"]
+    },
+    {
+      "name": "Glute-Ham Raise",
+      "category": "Legs",
+      "equipment_groups": [["Roman Chair"]],
+      "difficulty": "Advanced",
+      "muscles_worked": ["Hamstrings", "Glutes", "Erector Spinae"],
+      "how_to": [
+        "Position yourself in the GHD with feet secured against the plate.",
+        "Start with your body straight and horizontal.",
+        "Bend at the knees to raise your torso in an arc.",
+        "Lower back down under control to horizontal."
+      ],
+      "tags": ["bodyweight", "posterior-chain"]
+    },
+    {
+      "name": "Good Mornings",
+      "category": "Legs",
+      "equipment_groups": [["Barbell"],["Squat Rack"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Hamstrings", "Glutes", "Lower Back"],
+      "how_to": [
+        "Rack a barbell across your upper back and step out.",
+        "Set feet shoulder-width with a slight knee bend.",
+        "Hinge at the hips, lowering your chest until your torso nears parallel.",
+        "Drive the hips forward to stand tall."
+      ],
+      "tags": ["barbell", "hinge"]
+    },
+    {
+      "name": "Single-Leg Romanian Deadlift",
+      "category": "Legs",
+      "equipment_groups": [["Dumbbells"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Hamstrings", "Glutes", "Core"],
+      "how_to": [
+        "Hold a dumbbell and balance on one leg with a soft knee.",
+        "Hinge at the hip, extending the free leg straight behind you.",
+        "Lower the weight until you feel a hamstring stretch.",
+        "Drive the hip forward to return upright, then switch legs."
+      ],
+      "tags": ["unilateral", "hinge"]
+    },
+    {
+      "name": "Cable Pull-Through",
+      "category": "Legs",
+      "equipment_groups": [["Cable Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Glutes", "Hamstrings"],
+      "how_to": [
+        "Face away from a low cable with the rope between your legs.",
+        "Step forward and hinge at the hips holding the rope.",
+        "Push your hips back until you feel a hamstring stretch.",
+        "Snap your hips forward to stand tall and squeeze the glutes."
+      ],
+      "tags": ["cable", "hinge"]
+    },
+    {
+      "name": "Kettlebell Swing",
+      "category": "Legs",
+      "equipment_groups": [["Kettlebells"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Glutes", "Hamstrings", "Core"],
+      "how_to": [
+        "Stand with a kettlebell on the floor an arm's length ahead.",
+        "Hinge and hike the bell back between your legs.",
+        "Explosively drive your hips forward to swing it to chest height.",
+        "Let it fall back into the next hinge and repeat."
+      ],
+      "tags": ["kettlebell", "explosive"]
+    },
+    {
+      "name": "Stability Ball Hamstring Curl",
+      "category": "Legs",
+      "equipment_groups": [["Stability Ball"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Hamstrings", "Glutes"],
+      "how_to": [
+        "Lie on your back with heels on a stability ball.",
+        "Lift your hips into a bridge position.",
+        "Curl the ball toward your glutes by bending your knees.",
+        "Roll it back out under control while keeping hips lifted."
+      ],
+      "tags": ["core", "bodyweight"]
+    },
+    {
+      "name": "Slider Leg Curl",
+      "category": "Legs",
+      "equipment_groups": [],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Hamstrings", "Glutes"],
+      "how_to": [
+        "Lie on your back with heels on sliders or towels.",
+        "Bridge your hips off the floor.",
+        "Extend your legs out by sliding the heels away.",
+        "Pull the heels back in while keeping hips elevated."
+      ],
+      "tags": ["bodyweight", "eccentric"]
+    },
+    {
+      "name": "Hip Thrust (Barbell)",
+      "category": "Legs",
+      "equipment_groups": [["Barbell"],["Bench"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Glutes", "Hamstrings"],
+      "how_to": [
+        "Sit on the floor with your upper back against a bench.",
+        "Roll a padded barbell over your hips.",
+        "Drive through your heels to lift your hips until your torso is level.",
+        "Squeeze the glutes at the top, then lower under control."
+      ],
+      "tags": ["barbell", "glutes"]
+    },
+    {
+      "name": "Glute Bridge",
+      "category": "Legs",
+      "equipment_groups": [],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Glutes", "Hamstrings"],
+      "how_to": [
+        "Lie on your back with knees bent and feet flat.",
+        "Drive through your heels to raise your hips.",
+        "Squeeze your glutes at the top with a straight body line.",
+        "Lower your hips back to the floor under control."
+      ],
+      "tags": ["bodyweight", "glutes"]
+    },
+    {
+      "name": "Single-Leg Glute Bridge",
+      "category": "Legs",
+      "equipment_groups": [],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Glutes", "Hamstrings", "Core"],
+      "how_to": [
+        "Lie on your back with one knee bent and foot flat.",
+        "Extend the other leg straight out.",
+        "Drive through the planted heel to raise your hips.",
+        "Squeeze the glute at the top, lower down, then switch legs."
+      ],
+      "tags": ["unilateral", "bodyweight"]
+    },
+    {
+      "name": "Cable Kickback",
+      "category": "Legs",
+      "equipment_groups": [["Cable Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Glutes", "Hamstrings"],
+      "how_to": [
+        "Attach an ankle strap to a low cable and cuff one ankle.",
+        "Face the machine and hold on for balance.",
+        "Kick that leg straight back squeezing the glute.",
+        "Return under control, finish reps, then switch legs."
+      ],
+      "tags": ["cable", "glutes"]
+    },
+    {
+      "name": "Machine Hip Thrust",
+      "category": "Legs",
+      "equipment_groups": [["Hip Thrust Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Glutes", "Hamstrings"],
+      "how_to": [
+        "Sit in the machine with the pad across your hips.",
+        "Set your back against the support and feet flat.",
+        "Drive your hips up to extend fully.",
+        "Squeeze the glutes, then lower under control."
+      ],
+      "tags": ["machine", "glutes"]
+    },
+    {
+      "name": "Sumo Deadlift",
+      "category": "Legs",
+      "equipment_groups": [["Barbell"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Glutes", "Hamstrings", "Adductors"],
+      "how_to": [
+        "Set feet wide with toes pointed out and the bar over midfoot.",
+        "Grip the bar inside your knees with a flat back.",
+        "Drive through your heels and push the floor away.",
+        "Stand tall locking the hips, then lower under control."
+      ],
+      "tags": ["barbell", "hinge"]
+    },
+    {
+      "name": "Curtsy Lunge",
+      "category": "Legs",
+      "equipment_groups": [["Dumbbells"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Glutes", "Quads", "Abductors"],
+      "how_to": [
+        "Stand tall holding dumbbells at your sides.",
+        "Step one leg diagonally behind the other into a curtsy.",
+        "Lower until the front thigh is near parallel.",
+        "Push back to standing and alternate sides."
+      ],
+      "tags": ["unilateral", "glutes"]
+    },
+    {
+      "name": "Frog Pumps",
+      "category": "Legs",
+      "equipment_groups": [],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Glutes"],
+      "how_to": [
+        "Lie on your back with the soles of your feet together.",
+        "Let your knees fall out to the sides.",
+        "Drive through your heels to thrust your hips up.",
+        "Squeeze the glutes at the top, then lower down."
+      ],
+      "tags": ["bodyweight", "glutes"]
+    },
+    {
+      "name": "Banded Lateral Walk",
+      "category": "Legs",
+      "equipment_groups": [["Resistance Bands","Mini Bands"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Abductors", "Glutes"],
+      "how_to": [
+        "Loop a band around your legs above the knees or ankles.",
+        "Sit into a quarter squat with tension on the band.",
+        "Step sideways keeping constant band tension.",
+        "Take several steps one way, then return the other way."
+      ],
+      "tags": ["band", "glutes"]
+    },
+    {
+      "name": "Clamshells",
+      "category": "Legs",
+      "equipment_groups": [["Mini Bands","Resistance Bands"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Abductors", "Glutes"],
+      "how_to": [
+        "Lie on your side with a band around your thighs and knees bent.",
+        "Stack your hips and keep your feet together.",
+        "Raise your top knee like a clam opening.",
+        "Lower under control, finish reps, then switch sides."
+      ],
+      "tags": ["band", "glutes"]
+    },
+    {
+      "name": "Donkey Kicks",
+      "category": "Legs",
+      "equipment_groups": [],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Glutes", "Hamstrings"],
+      "how_to": [
+        "Start on all fours with hands under shoulders and knees under hips.",
+        "Keeping the knee bent, drive one foot up toward the ceiling.",
+        "Squeeze the glute at the top without arching the low back.",
+        "Lower under control, finish reps, then switch legs."
+      ],
+      "tags": ["bodyweight", "glutes"]
+    },
+    {
+      "name": "Fire Hydrants",
+      "category": "Legs",
+      "equipment_groups": [],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Abductors", "Glutes"],
+      "how_to": [
+        "Start on all fours with a neutral spine.",
+        "Keeping the knee bent, raise one leg out to the side.",
+        "Lift until the thigh is near parallel to the floor.",
+        "Lower under control, finish reps, then switch legs."
+      ],
+      "tags": ["bodyweight", "glutes"]
+    },
+    {
+      "name": "Standing Cable Hip Abduction",
+      "category": "Legs",
+      "equipment_groups": [["Cable Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Abductors", "Glutes"],
+      "how_to": [
+        "Cuff one ankle to a low cable and stand side-on to the machine.",
+        "Hold the frame for balance.",
+        "Sweep the working leg out to the side away from the stack.",
+        "Return under control, finish reps, then switch legs."
+      ],
+      "tags": ["cable", "isolation"]
+    },
+    {
+      "name": "Adductor Machine",
+      "category": "Legs",
+      "equipment_groups": [["Adductor Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Adductors"],
+      "how_to": [
+        "Sit in the machine with your legs outside the pads.",
+        "Set the starting width to a comfortable stretch.",
+        "Squeeze your thighs together against the pads.",
+        "Return under control to the start."
+      ],
+      "tags": ["machine", "isolation"]
+    },
+    {
+      "name": "Copenhagen Plank",
+      "category": "Legs",
+      "equipment_groups": [["Bench"]],
+      "difficulty": "Advanced",
+      "muscles_worked": ["Adductors", "Core", "Obliques"],
+      "how_to": [
+        "Lie on your side with your top foot resting on a bench.",
+        "Prop up on your forearm beneath your shoulder.",
+        "Lift your hips so your body forms a straight line.",
+        "Hold the position, then switch sides."
+      ],
+      "tags": ["isometric", "adductors"]
+    },
+    {
+      "name": "Sumo Squat",
+      "category": "Legs",
+      "equipment_groups": [["Barbell","Dumbbells","Kettlebells"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Adductors", "Glutes", "Quads"],
+      "how_to": [
+        "Stand with a wide stance and toes turned out.",
+        "Hold your weight at your chest or hanging between your legs.",
+        "Squat straight down keeping knees tracking over toes.",
+        "Drive through your heels to stand tall."
+      ],
+      "tags": ["compound", "adductors"]
+    },
+    {
+      "name": "Cossack Squat",
+      "category": "Legs",
+      "equipment_groups": [],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Adductors", "Quads", "Glutes"],
+      "how_to": [
+        "Stand with a very wide stance and toes slightly out.",
+        "Shift your weight over one leg and squat down on that side.",
+        "Keep the other leg straight with the heel down.",
+        "Push back to center and repeat on the other side."
+      ],
+      "tags": ["bodyweight", "mobility"]
+    },
+    {
+      "name": "Wide-Stance Leg Press",
+      "category": "Legs",
+      "equipment_groups": [["Leg Press Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Adductors", "Glutes", "Quads"],
+      "how_to": [
+        "Sit in the leg press with your back flat against the pad.",
+        "Place feet high and wide with toes turned out.",
+        "Release the safeties and lower the platform under control.",
+        "Press through your heels to extend without locking the knees."
+      ],
+      "tags": ["machine", "adductors"]
+    },
+    {
+      "name": "Cable Adduction",
+      "category": "Legs",
+      "equipment_groups": [["Cable Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Adductors"],
+      "how_to": [
+        "Cuff the inside ankle to a low cable and stand side-on.",
+        "Start with the leg pulled out to the side.",
+        "Sweep the working leg across your body against the resistance.",
+        "Return under control, finish reps, then switch legs."
+      ],
+      "tags": ["cable", "isolation"]
+    },
+    {
+      "name": "Side-Lying Adduction",
+      "category": "Legs",
+      "equipment_groups": [],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Adductors"],
+      "how_to": [
+        "Lie on your side with the bottom leg straight.",
+        "Cross the top leg in front and rest the foot on the floor.",
+        "Raise the bottom straight leg toward the ceiling.",
+        "Lower under control, finish reps, then switch sides."
+      ],
+      "tags": ["bodyweight", "isolation"]
+    },
+    {
+      "name": "Abductor Machine",
+      "category": "Legs",
+      "equipment_groups": [["Abductor Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Abductors", "Glutes"],
+      "how_to": [
+        "Sit in the machine with your legs inside the pads.",
+        "Set your back against the support.",
+        "Push your thighs outward against the pads.",
+        "Return under control to the start."
+      ],
+      "tags": ["machine", "isolation"]
+    },
+    {
+      "name": "Standing Calf Raise (Machine)",
+      "category": "Legs",
+      "equipment_groups": [["Calf Raise Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Calves", "Soleus"],
+      "how_to": [
+        "Position your shoulders under the pads and balls of feet on the platform.",
+        "Let your heels drop for a full stretch.",
+        "Press up onto your toes as high as possible.",
+        "Lower under control back to the stretch."
+      ],
+      "tags": ["machine", "calves"]
+    },
+    {
+      "name": "Seated Calf Raise (Machine)",
+      "category": "Legs",
+      "equipment_groups": [["Calf Raise Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Soleus", "Calves"],
+      "how_to": [
+        "Sit with the balls of your feet on the platform and pads on your thighs.",
+        "Release the safety and let your heels drop.",
+        "Press up onto your toes squeezing the calves.",
+        "Lower under control back to the stretch."
+      ],
+      "tags": ["machine", "soleus"]
+    },
+    {
+      "name": "Donkey Calf Raise",
+      "category": "Legs",
+      "equipment_groups": [],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Calves", "Soleus"],
+      "how_to": [
+        "Place the balls of your feet on a raised surface and hinge at the hips.",
+        "Support your upper body on a bench or rail.",
+        "Let your heels drop for a stretch.",
+        "Press up onto your toes, then lower under control."
+      ],
+      "tags": ["bodyweight", "calves"]
+    },
+    {
+      "name": "Single-Leg Calf Raise",
+      "category": "Legs",
+      "equipment_groups": [],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Calves", "Soleus"],
+      "how_to": [
+        "Stand on one foot with the ball of the foot on an edge.",
+        "Hold a support for balance.",
+        "Let the heel drop below the step for a stretch.",
+        "Press up onto the toes, lower under control, then switch legs."
+      ],
+      "tags": ["unilateral", "calves"]
+    },
+    {
+      "name": "Leg Press Calf Raise",
+      "category": "Legs",
+      "equipment_groups": [["Leg Press Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Calves", "Soleus"],
+      "how_to": [
+        "Sit in the leg press with the balls of your feet low on the platform.",
+        "Extend your legs and release the safeties.",
+        "Push the platform away by pressing through your toes.",
+        "Let your toes flex back for a stretch under control."
+      ],
+      "tags": ["machine", "calves"]
+    },
+    {
+      "name": "Calf Raise On Step",
+      "category": "Legs",
+      "equipment_groups": [],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Calves", "Soleus"],
+      "how_to": [
+        "Stand with the balls of your feet on the edge of a step.",
+        "Hold a rail or wall for balance.",
+        "Let your heels drop below the step for a stretch.",
+        "Rise onto your toes as high as possible, then lower under control."
+      ],
+      "tags": ["bodyweight", "calves"]
+    },
+    {
+      "name": "Clean",
+      "category": "Strength",
+      "equipment_groups": [["Barbell"]],
+      "difficulty": "Advanced",
+      "muscles_worked": ["Quads", "Glutes", "Hamstrings", "Trapezius"],
+      "how_to": [
+        "Set up over the bar with a shoulder-width grip and flat back.",
+        "Pull the bar from the floor, extending the hips and knees explosively.",
+        "Shrug and pull under the bar, dropping into a front-rack squat.",
+        "Stand tall to complete the lift."
+      ],
+      "tags": ["olympic", "explosive"]
+    },
+    {
+      "name": "Power Clean",
+      "category": "Strength",
+      "equipment_groups": [["Barbell"]],
+      "difficulty": "Advanced",
+      "muscles_worked": ["Quads", "Glutes", "Hamstrings", "Trapezius"],
+      "how_to": [
+        "Set up over the bar with a shoulder-width grip and flat back.",
+        "Explosively extend the hips and knees to accelerate the bar.",
+        "Shrug and pull under, catching the bar in a partial squat.",
+        "Stand tall to finish."
+      ],
+      "tags": ["olympic", "explosive"]
+    },
+    {
+      "name": "Snatch",
+      "category": "Strength",
+      "equipment_groups": [["Barbell"]],
+      "difficulty": "Advanced",
+      "muscles_worked": ["Quads", "Glutes", "Hamstrings", "Trapezius"],
+      "how_to": [
+        "Set up with a wide grip and flat back over the bar.",
+        "Pull explosively, extending the hips and knees fully.",
+        "Pull under the bar and catch it overhead in a deep squat.",
+        "Stand up to complete the lift."
+      ],
+      "tags": ["olympic", "explosive"]
+    },
+    {
+      "name": "Box Jumps",
+      "category": "Strength",
+      "equipment_groups": [["Plyo Box"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Quads", "Glutes", "Calves"],
+      "how_to": [
+        "Stand facing a sturdy box a short distance away.",
+        "Dip into a quarter squat and swing your arms back.",
+        "Explode up and jump onto the box, landing softly.",
+        "Stand tall, then step back down and reset."
+      ],
+      "tags": ["plyometric", "explosive"]
+    },
+    {
+      "name": "Broad Jumps",
+      "category": "Strength",
+      "equipment_groups": [],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Quads", "Glutes", "Hamstrings"],
+      "how_to": [
+        "Stand with feet shoulder-width apart.",
+        "Dip into a quarter squat and swing your arms back.",
+        "Explode forward, jumping out as far as possible.",
+        "Land softly with bent knees and reset."
+      ],
+      "tags": ["plyometric", "explosive"]
+    },
+    {
+      "name": "Jump Squats",
+      "category": "Strength",
+      "equipment_groups": [],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Quads", "Glutes", "Calves"],
+      "how_to": [
+        "Stand with feet shoulder-width apart.",
+        "Lower into a squat.",
+        "Explode straight up off the floor.",
+        "Land softly and immediately sink into the next rep."
+      ],
+      "tags": ["plyometric", "explosive"]
+    },
+    {
+      "name": "Sled Push",
+      "category": "Strength",
+      "equipment_groups": [["Sled"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Quads", "Glutes", "Calves", "Cardiovascular System"],
+      "how_to": [
+        "Grip the sled uprights with arms extended and body leaning in.",
+        "Drive one leg back powerfully into the ground.",
+        "Take short, explosive strides to push the sled forward.",
+        "Maintain a low lean throughout the distance."
+      ],
+      "tags": ["conditioning", "explosive"]
+    },
+    {
+      "name": "Sled Pull",
+      "category": "Strength",
+      "equipment_groups": [["Sled"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Hamstrings", "Glutes", "Grip", "Cardiovascular System"],
+      "how_to": [
+        "Attach a strap or handles to a loaded sled.",
+        "Hold the handles with a flat back and lean away.",
+        "Drive through your legs to walk or pull backward.",
+        "Keep tension and reel the sled toward you steadily."
+      ],
+      "tags": ["conditioning", "posterior-chain"]
+    },
+    {
+      "name": "Jump Rope (Calf Endurance)",
+      "category": "Cardio",
+      "equipment_groups": [["Jump Rope","Weighted Jump Rope"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Calves", "Soleus", "Cardiovascular System"],
+      "how_to": [
+        "Hold the rope handles with the rope behind your heels.",
+        "Swing the rope overhead with your wrists.",
+        "Hop lightly on the balls of your feet as it passes under.",
+        "Keep a steady rhythm and stay tall."
+      ],
+      "tags": ["conditioning", "calves"]
+    }
+  ]
+}

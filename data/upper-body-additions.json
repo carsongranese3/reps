@@ -1,0 +1,956 @@
+{
+  "exercises": [
+    {
+      "name": "Incline Barbell Bench Press",
+      "category": "Push",
+      "equipment_groups": [["Barbell"], ["Adjustable Bench"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Upper Chest", "Front Delts", "Triceps"],
+      "how_to": [
+        "Set the bench to a 30-45 degree incline and lie back with feet planted.",
+        "Grip the bar slightly wider than shoulder-width and unrack it.",
+        "Lower the bar to your upper chest with control.",
+        "Press the bar back up until your arms are extended."
+      ],
+      "tags": ["compound", "chest"]
+    },
+    {
+      "name": "Decline Barbell Bench Press",
+      "category": "Push",
+      "equipment_groups": [["Barbell"], ["Decline Bench"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Chest", "Triceps", "Front Delts"],
+      "how_to": [
+        "Secure your legs and lie back on the decline bench.",
+        "Grip the bar just wider than shoulder-width and unrack it.",
+        "Lower the bar to your lower chest.",
+        "Press it back up until your arms lock out."
+      ],
+      "tags": ["compound", "chest"]
+    },
+    {
+      "name": "Dumbbell Bench Press",
+      "category": "Push",
+      "equipment_groups": [["Dumbbells"], ["Bench"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Chest", "Front Delts", "Triceps"],
+      "how_to": [
+        "Lie flat on the bench holding a dumbbell in each hand.",
+        "Start with the dumbbells at chest level, elbows bent.",
+        "Press the dumbbells up until your arms are extended.",
+        "Lower them back down with control."
+      ],
+      "tags": ["compound", "chest"]
+    },
+    {
+      "name": "Decline Dumbbell Press",
+      "category": "Push",
+      "equipment_groups": [["Dumbbells"], ["Decline Bench"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Chest", "Triceps", "Front Delts"],
+      "how_to": [
+        "Secure your legs and lie back on the decline bench.",
+        "Hold a dumbbell in each hand at lower-chest level.",
+        "Press the dumbbells up until your arms extend.",
+        "Lower them back down slowly."
+      ],
+      "tags": ["compound", "chest"]
+    },
+    {
+      "name": "Incline Dumbbell Fly",
+      "category": "Push",
+      "equipment_groups": [["Dumbbells"], ["Adjustable Bench"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Upper Chest", "Front Delts"],
+      "how_to": [
+        "Set the bench to a low incline and lie back with a dumbbell in each hand.",
+        "Extend your arms above your chest with a slight elbow bend.",
+        "Open your arms in a wide arc until you feel a chest stretch.",
+        "Bring the dumbbells back together over your chest."
+      ],
+      "tags": ["isolation", "chest"]
+    },
+    {
+      "name": "Cable Crossover (High To Low)",
+      "category": "Push",
+      "equipment_groups": [["Cable Machine"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Chest", "Front Delts"],
+      "how_to": [
+        "Set both pulleys high and grab a handle in each hand.",
+        "Step forward with a slight forward lean and soft elbows.",
+        "Pull the handles down and across to meet in front of your hips.",
+        "Return to the start under control."
+      ],
+      "tags": ["isolation", "chest"]
+    },
+    {
+      "name": "Cable Crossover (Low To High)",
+      "category": "Push",
+      "equipment_groups": [["Cable Machine"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Upper Chest", "Front Delts"],
+      "how_to": [
+        "Set both pulleys low and grab a handle in each hand.",
+        "Step forward with a slight lean and soft elbows.",
+        "Sweep the handles up and together in front of your face.",
+        "Lower them back down with control."
+      ],
+      "tags": ["isolation", "chest"]
+    },
+    {
+      "name": "Pec Deck",
+      "category": "Push",
+      "equipment_groups": [["Pec Deck"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Chest", "Front Delts"],
+      "how_to": [
+        "Sit with your back flat against the pad and grip the handles.",
+        "Keep a slight bend in your elbows.",
+        "Squeeze the handles together in front of your chest.",
+        "Slowly let them return to the stretched position."
+      ],
+      "tags": ["isolation", "chest"]
+    },
+    {
+      "name": "Chest Press Machine",
+      "category": "Push",
+      "equipment_groups": [["Chest Press Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Chest", "Triceps", "Front Delts"],
+      "how_to": [
+        "Adjust the seat so the handles align with your mid-chest.",
+        "Grip the handles and keep your back against the pad.",
+        "Press the handles forward until your arms extend.",
+        "Return slowly to the starting position."
+      ],
+      "tags": ["compound", "chest"]
+    },
+    {
+      "name": "Incline Push-Ups",
+      "category": "Push",
+      "equipment_groups": [["Bench"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Chest", "Triceps", "Front Delts"],
+      "how_to": [
+        "Place your hands on a bench slightly wider than shoulder-width.",
+        "Step your feet back into a straight plank position.",
+        "Lower your chest toward the bench by bending your elbows.",
+        "Push back up until your arms are extended."
+      ],
+      "tags": ["bodyweight", "chest"]
+    },
+    {
+      "name": "Decline Push-Ups",
+      "category": "Push",
+      "equipment_groups": [["Bench"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Upper Chest", "Front Delts", "Triceps"],
+      "how_to": [
+        "Place your feet on a bench and hands on the floor.",
+        "Form a straight line from head to heels.",
+        "Lower your chest toward the floor by bending your elbows.",
+        "Press back up until your arms extend."
+      ],
+      "tags": ["bodyweight", "chest"]
+    },
+    {
+      "name": "Diamond Push-Ups",
+      "category": "Push",
+      "equipment_groups": [],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Triceps", "Chest", "Front Delts"],
+      "how_to": [
+        "Get into a plank with your hands together forming a diamond shape.",
+        "Keep your body in a straight line and elbows tucked.",
+        "Lower your chest toward your hands.",
+        "Push back up until your arms are fully extended."
+      ],
+      "tags": ["bodyweight", "triceps"]
+    },
+    {
+      "name": "Svend Press",
+      "category": "Push",
+      "equipment_groups": [["Weight Plates"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Chest", "Front Delts"],
+      "how_to": [
+        "Press two weight plates together between your palms at chest level.",
+        "Squeeze the plates hard to engage your chest.",
+        "Press the plates straight out until your arms extend.",
+        "Pull them back to your chest under control."
+      ],
+      "tags": ["isolation", "chest"]
+    },
+    {
+      "name": "Landmine Press",
+      "category": "Push",
+      "equipment_groups": [["Landmine"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Front Delts", "Upper Chest", "Triceps"],
+      "how_to": [
+        "Hold the end of the landmine bar at shoulder height.",
+        "Stand in a staggered stance with your core braced.",
+        "Press the bar up and slightly forward until your arm extends.",
+        "Lower it back to your shoulder with control."
+      ],
+      "tags": ["compound", "shoulders"]
+    },
+    {
+      "name": "Arnold Press",
+      "category": "Push",
+      "equipment_groups": [["Dumbbells"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Front Delts", "Side Delts", "Triceps"],
+      "how_to": [
+        "Hold two dumbbells in front of your shoulders, palms facing you.",
+        "Press up while rotating your palms to face forward.",
+        "Extend fully overhead.",
+        "Reverse the motion back to the start."
+      ],
+      "tags": ["compound", "shoulders"]
+    },
+    {
+      "name": "Push Press",
+      "category": "Push",
+      "equipment_groups": [["Barbell"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Shoulders", "Triceps", "Front Delts"],
+      "how_to": [
+        "Hold the bar at your front shoulders with an overhand grip.",
+        "Dip slightly by bending your knees.",
+        "Drive up explosively and press the bar overhead.",
+        "Lower it back to your shoulders with control."
+      ],
+      "tags": ["compound", "shoulders"]
+    },
+    {
+      "name": "Machine Shoulder Press",
+      "category": "Push",
+      "equipment_groups": [["Shoulder Press Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Front Delts", "Side Delts", "Triceps"],
+      "how_to": [
+        "Adjust the seat so the handles sit at shoulder height.",
+        "Grip the handles and keep your back against the pad.",
+        "Press the handles overhead until your arms extend.",
+        "Lower them back down slowly."
+      ],
+      "tags": ["compound", "shoulders"]
+    },
+    {
+      "name": "Cable Lateral Raises",
+      "category": "Push",
+      "equipment_groups": [["Cable Machine"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Side Delts"],
+      "how_to": [
+        "Set a low pulley and grab the handle with the outside hand.",
+        "Stand side-on to the machine with a slight elbow bend.",
+        "Raise your arm out to the side to shoulder height.",
+        "Lower it back down with control."
+      ],
+      "tags": ["isolation", "shoulders"]
+    },
+    {
+      "name": "Front Raises",
+      "category": "Push",
+      "equipment_groups": [["Dumbbells"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Front Delts"],
+      "how_to": [
+        "Hold a dumbbell in each hand in front of your thighs.",
+        "Keep a slight bend in your elbows and brace your core.",
+        "Raise the dumbbells to shoulder height in front of you.",
+        "Lower them back down slowly."
+      ],
+      "tags": ["isolation", "shoulders"]
+    },
+    {
+      "name": "Rear Delt Fly (Dumbbell)",
+      "category": "Push",
+      "equipment_groups": [["Dumbbells"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Rear Delts", "Rhomboids"],
+      "how_to": [
+        "Hinge forward at the hips holding a dumbbell in each hand.",
+        "Let the dumbbells hang with a slight elbow bend.",
+        "Raise your arms out to the sides, squeezing your rear delts.",
+        "Lower them back down with control."
+      ],
+      "tags": ["isolation", "shoulders"]
+    },
+    {
+      "name": "Rear Delt Fly (Machine)",
+      "category": "Push",
+      "equipment_groups": [["Pec Deck"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Rear Delts", "Rhomboids"],
+      "how_to": [
+        "Sit facing the pad and grip the handles with arms extended.",
+        "Keep a slight bend in your elbows.",
+        "Pull the handles out and back, squeezing your rear delts.",
+        "Return to the start under control."
+      ],
+      "tags": ["isolation", "shoulders"]
+    },
+    {
+      "name": "Upright Rows",
+      "category": "Push",
+      "equipment_groups": [["Barbell", "EZ Bar"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Side Delts", "Trapezius"],
+      "how_to": [
+        "Hold the bar with an overhand grip in front of your thighs.",
+        "Keep the bar close to your body.",
+        "Pull it up toward your chin, leading with your elbows.",
+        "Lower it back down with control."
+      ],
+      "tags": ["compound", "shoulders"]
+    },
+    {
+      "name": "Barbell Shrugs",
+      "category": "Push",
+      "equipment_groups": [["Barbell"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Trapezius"],
+      "how_to": [
+        "Hold the bar in front of your thighs with an overhand grip.",
+        "Keep your arms straight and core braced.",
+        "Shrug your shoulders straight up toward your ears.",
+        "Lower them back down slowly."
+      ],
+      "tags": ["isolation", "traps"]
+    },
+    {
+      "name": "Dumbbell Shrugs",
+      "category": "Push",
+      "equipment_groups": [["Dumbbells"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Trapezius"],
+      "how_to": [
+        "Hold a dumbbell in each hand at your sides.",
+        "Keep your arms straight and shoulders relaxed.",
+        "Shrug your shoulders straight up toward your ears.",
+        "Lower them back down under control."
+      ],
+      "tags": ["isolation", "traps"]
+    },
+    {
+      "name": "Cuban Press",
+      "category": "Push",
+      "equipment_groups": [["Dumbbells"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Rear Delts", "Side Delts", "Shoulders"],
+      "how_to": [
+        "Hold light dumbbells with elbows bent and raised to shoulder height.",
+        "Externally rotate your forearms up until they point to the ceiling.",
+        "Press the dumbbells overhead.",
+        "Reverse each step back to the start."
+      ],
+      "tags": ["compound", "shoulders"]
+    },
+    {
+      "name": "Bradford Press",
+      "category": "Push",
+      "equipment_groups": [["Barbell"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Front Delts", "Side Delts", "Triceps"],
+      "how_to": [
+        "Hold the bar at your front shoulders with an overhand grip.",
+        "Press up just high enough to clear your head.",
+        "Lower the bar behind your head to neck level.",
+        "Press back up and return it to the front."
+      ],
+      "tags": ["compound", "shoulders"]
+    },
+    {
+      "name": "Close-Grip Bench Press",
+      "category": "Push",
+      "equipment_groups": [["Barbell"], ["Bench"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Triceps", "Chest", "Front Delts"],
+      "how_to": [
+        "Lie on the bench and grip the bar about shoulder-width apart.",
+        "Unrack the bar and hold it over your chest.",
+        "Lower it to your lower chest, keeping elbows tucked.",
+        "Press the bar back up until your arms extend."
+      ],
+      "tags": ["compound", "triceps"]
+    },
+    {
+      "name": "Triceps Dips",
+      "category": "Push",
+      "equipment_groups": [["Dip Station", "Parallettes"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Triceps", "Chest", "Front Delts"],
+      "how_to": [
+        "Grip the parallel bars and support yourself with arms extended.",
+        "Keep your torso fairly upright to target the triceps.",
+        "Lower your body by bending your elbows to about 90 degrees.",
+        "Press back up until your arms are straight."
+      ],
+      "tags": ["bodyweight", "triceps"]
+    },
+    {
+      "name": "Overhead Triceps Extension (Dumbbell)",
+      "category": "Push",
+      "equipment_groups": [["Dumbbells"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Triceps"],
+      "how_to": [
+        "Hold one dumbbell overhead with both hands.",
+        "Keep your elbows close to your head.",
+        "Lower the dumbbell behind your head by bending your elbows.",
+        "Extend your arms back up to the top."
+      ],
+      "tags": ["isolation", "triceps"]
+    },
+    {
+      "name": "Overhead Triceps Extension (Cable)",
+      "category": "Push",
+      "equipment_groups": [["Cable Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Triceps"],
+      "how_to": [
+        "Set a rope on a high or low pulley and face away from the machine.",
+        "Hold the rope overhead with elbows bent.",
+        "Extend your arms forward and up until they lock out.",
+        "Return under control to the stretched position."
+      ],
+      "tags": ["isolation", "triceps"]
+    },
+    {
+      "name": "Triceps Pushdown (Bar)",
+      "category": "Push",
+      "equipment_groups": [["Cable Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Triceps"],
+      "how_to": [
+        "Attach a straight bar to a high pulley and grip it overhand.",
+        "Keep your elbows tucked at your sides.",
+        "Push the bar down until your arms are fully extended.",
+        "Let it rise back up under control."
+      ],
+      "tags": ["isolation", "triceps"]
+    },
+    {
+      "name": "Triceps Pushdown (Rope)",
+      "category": "Push",
+      "equipment_groups": [["Cable Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Triceps"],
+      "how_to": [
+        "Attach a rope to a high pulley and grip both ends.",
+        "Keep your elbows pinned at your sides.",
+        "Push down and spread the rope ends apart at the bottom.",
+        "Return under control to the start."
+      ],
+      "tags": ["isolation", "triceps"]
+    },
+    {
+      "name": "Triceps Kickbacks",
+      "category": "Push",
+      "equipment_groups": [["Dumbbells"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Triceps"],
+      "how_to": [
+        "Hinge forward with a dumbbell in each hand and elbows raised.",
+        "Keep your upper arms parallel to the floor.",
+        "Extend your forearms back until your arms are straight.",
+        "Return to the bent position with control."
+      ],
+      "tags": ["isolation", "triceps"]
+    },
+    {
+      "name": "Bench Dips",
+      "category": "Push",
+      "equipment_groups": [["Bench"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Triceps", "Front Delts", "Chest"],
+      "how_to": [
+        "Sit on the edge of a bench and grip it beside your hips.",
+        "Slide your hips off the bench with legs extended forward.",
+        "Lower your body by bending your elbows to about 90 degrees.",
+        "Press back up until your arms are straight."
+      ],
+      "tags": ["bodyweight", "triceps"]
+    },
+    {
+      "name": "JM Press",
+      "category": "Push",
+      "equipment_groups": [["Barbell"], ["Bench"]],
+      "difficulty": "Advanced",
+      "muscles_worked": ["Triceps", "Chest"],
+      "how_to": [
+        "Lie on the bench and hold the bar with a close grip over your chest.",
+        "Lower the bar toward your upper chest and neck, keeping elbows forward.",
+        "Stop when your forearms nearly touch your biceps.",
+        "Press the bar back up until your arms extend."
+      ],
+      "tags": ["compound", "triceps"]
+    },
+    {
+      "name": "Chin-Ups",
+      "category": "Pull",
+      "equipment_groups": [["Pull-Up Bar"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Lats", "Biceps", "Upper Back"],
+      "how_to": [
+        "Grip the bar with an underhand grip about shoulder-width apart.",
+        "Hang with your arms extended and core braced.",
+        "Pull yourself up until your chin clears the bar.",
+        "Lower yourself back down with control."
+      ],
+      "tags": ["compound", "back"]
+    },
+    {
+      "name": "Wide-Grip Pull-Ups",
+      "category": "Pull",
+      "equipment_groups": [["Pull-Up Bar"]],
+      "difficulty": "Advanced",
+      "muscles_worked": ["Lats", "Upper Back", "Rhomboids"],
+      "how_to": [
+        "Grip the bar overhand, wider than shoulder-width.",
+        "Hang with your arms extended and shoulders engaged.",
+        "Pull yourself up until your chin clears the bar.",
+        "Lower yourself back down slowly."
+      ],
+      "tags": ["compound", "back"]
+    },
+    {
+      "name": "Neutral-Grip Pull-Ups",
+      "category": "Pull",
+      "equipment_groups": [["Pull-Up Bar"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Lats", "Biceps", "Upper Back"],
+      "how_to": [
+        "Grip parallel handles with your palms facing each other.",
+        "Hang with your arms extended and core tight.",
+        "Pull yourself up until your chin reaches the handles.",
+        "Lower back down under control."
+      ],
+      "tags": ["compound", "back"]
+    },
+    {
+      "name": "Lat Pulldown (Close Grip)",
+      "category": "Pull",
+      "equipment_groups": [["Lat Pulldown Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Lats", "Biceps", "Mid-Back"],
+      "how_to": [
+        "Attach a close-grip handle and sit with your thighs secured.",
+        "Grip the handle and lean back slightly.",
+        "Pull the handle to your upper chest, driving your elbows down.",
+        "Let it rise back up under control."
+      ],
+      "tags": ["compound", "back"]
+    },
+    {
+      "name": "Barbell Bent-Over Row",
+      "category": "Pull",
+      "equipment_groups": [["Barbell"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Lats", "Mid-Back", "Rhomboids"],
+      "how_to": [
+        "Hold the bar with an overhand grip and hinge forward at the hips.",
+        "Keep your back flat and knees slightly bent.",
+        "Pull the bar to your lower ribs, squeezing your shoulder blades.",
+        "Lower it back down with control."
+      ],
+      "tags": ["compound", "back"]
+    },
+    {
+      "name": "Pendlay Row",
+      "category": "Pull",
+      "equipment_groups": [["Barbell"]],
+      "difficulty": "Advanced",
+      "muscles_worked": ["Lats", "Mid-Back", "Rhomboids"],
+      "how_to": [
+        "Set your torso parallel to the floor with the bar on the ground.",
+        "Grip the bar overhand just wider than shoulder-width.",
+        "Explosively pull the bar to your lower chest.",
+        "Return it to the floor and reset each rep."
+      ],
+      "tags": ["compound", "back"]
+    },
+    {
+      "name": "Dumbbell Single-Arm Row",
+      "category": "Pull",
+      "equipment_groups": [["Dumbbells"], ["Bench"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Lats", "Mid-Back", "Rhomboids"],
+      "how_to": [
+        "Place one knee and hand on a bench with the other foot planted.",
+        "Hold a dumbbell in the free hand, arm extended.",
+        "Pull the dumbbell to your hip, driving your elbow back.",
+        "Lower it back down with control."
+      ],
+      "tags": ["compound", "back"]
+    },
+    {
+      "name": "Chest-Supported Dumbbell Row",
+      "category": "Pull",
+      "equipment_groups": [["Dumbbells"], ["Adjustable Bench"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Lats", "Rhomboids", "Rear Delts"],
+      "how_to": [
+        "Set the bench to a low incline and lie chest-down on it.",
+        "Let a dumbbell hang in each hand below your shoulders.",
+        "Row the dumbbells up to your sides, squeezing your back.",
+        "Lower them back down under control."
+      ],
+      "tags": ["compound", "back"]
+    },
+    {
+      "name": "T-Bar Row",
+      "category": "Pull",
+      "equipment_groups": [["Landmine"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Lats", "Mid-Back", "Rhomboids"],
+      "how_to": [
+        "Straddle the loaded bar and attach a close-grip handle.",
+        "Hinge forward with a flat back and slight knee bend.",
+        "Pull the handle to your chest, squeezing your shoulder blades.",
+        "Lower it back down with control."
+      ],
+      "tags": ["compound", "back"]
+    },
+    {
+      "name": "Machine Row",
+      "category": "Pull",
+      "equipment_groups": [["Seated Row Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Lats", "Mid-Back", "Rhomboids"],
+      "how_to": [
+        "Sit with your chest against the pad and grip the handles.",
+        "Keep your back straight and core braced.",
+        "Pull the handles toward you, driving your elbows back.",
+        "Return to the start under control."
+      ],
+      "tags": ["compound", "back"]
+    },
+    {
+      "name": "Inverted Row",
+      "category": "Pull",
+      "equipment_groups": [["Barbell", "Suspension Trainer"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Mid-Back", "Lats", "Biceps"],
+      "how_to": [
+        "Set a bar at waist height and hang underneath it.",
+        "Grip it overhand and keep your body in a straight line.",
+        "Pull your chest up to the bar, squeezing your back.",
+        "Lower yourself back down with control."
+      ],
+      "tags": ["bodyweight", "back"]
+    },
+    {
+      "name": "Straight-Arm Pulldown",
+      "category": "Pull",
+      "equipment_groups": [["Cable Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Lats"],
+      "how_to": [
+        "Attach a straight bar to a high pulley and grip it overhand.",
+        "Stand back with a slight hip hinge and arms extended.",
+        "Pull the bar down to your thighs, keeping your arms straight.",
+        "Let it rise back up under control."
+      ],
+      "tags": ["isolation", "back"]
+    },
+    {
+      "name": "Deadlift",
+      "category": "Pull",
+      "equipment_groups": [["Barbell"]],
+      "difficulty": "Advanced",
+      "muscles_worked": ["Erector Spinae", "Glutes", "Lats"],
+      "how_to": [
+        "Stand with mid-foot under the bar and grip it just outside your knees.",
+        "Set a flat back, chest up, and brace your core.",
+        "Drive through your legs and stand up, keeping the bar close.",
+        "Return the bar to the floor with control."
+      ],
+      "tags": ["compound", "back"]
+    },
+    {
+      "name": "Rack Pulls",
+      "category": "Pull",
+      "equipment_groups": [["Barbell"], ["Power Rack"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Erector Spinae", "Trapezius", "Lats"],
+      "how_to": [
+        "Set the bar on rack pins at knee height.",
+        "Grip the bar overhand with a flat back.",
+        "Drive your hips forward and stand up to lockout.",
+        "Lower the bar back to the pins under control."
+      ],
+      "tags": ["compound", "back"]
+    },
+    {
+      "name": "Meadows Row",
+      "category": "Pull",
+      "equipment_groups": [["Landmine"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Lats", "Upper Back", "Rear Delts"],
+      "how_to": [
+        "Stand perpendicular to a landmine bar and grip its end overhand.",
+        "Hinge forward with a flat back, staggered stance.",
+        "Row the bar up toward your hip, driving your elbow high.",
+        "Lower it back down with control."
+      ],
+      "tags": ["compound", "back"]
+    },
+    {
+      "name": "Renegade Row",
+      "category": "Pull",
+      "equipment_groups": [["Dumbbells"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Lats", "Core", "Rhomboids"],
+      "how_to": [
+        "Start in a plank gripping a dumbbell in each hand.",
+        "Keep your hips square and core tight.",
+        "Row one dumbbell to your side while balancing on the other.",
+        "Lower it and repeat on the other side."
+      ],
+      "tags": ["compound", "back"]
+    },
+    {
+      "name": "Dumbbell Curl",
+      "category": "Pull",
+      "equipment_groups": [["Dumbbells"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Biceps"],
+      "how_to": [
+        "Hold a dumbbell in each hand at your sides, palms forward.",
+        "Keep your elbows tucked against your torso.",
+        "Curl the dumbbells up toward your shoulders.",
+        "Lower them back down with control."
+      ],
+      "tags": ["isolation", "biceps"]
+    },
+    {
+      "name": "Hammer Curl",
+      "category": "Pull",
+      "equipment_groups": [["Dumbbells"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Biceps", "Forearms"],
+      "how_to": [
+        "Hold a dumbbell in each hand with a neutral grip, palms facing in.",
+        "Keep your elbows tucked at your sides.",
+        "Curl the dumbbells up while keeping your palms facing inward.",
+        "Lower them back down under control."
+      ],
+      "tags": ["isolation", "biceps"]
+    },
+    {
+      "name": "Incline Dumbbell Curl",
+      "category": "Pull",
+      "equipment_groups": [["Dumbbells"], ["Adjustable Bench"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Biceps"],
+      "how_to": [
+        "Set the bench to an incline and lie back with a dumbbell in each hand.",
+        "Let your arms hang straight down, palms forward.",
+        "Curl the dumbbells up toward your shoulders.",
+        "Lower them back down for a full stretch."
+      ],
+      "tags": ["isolation", "biceps"]
+    },
+    {
+      "name": "Preacher Curl",
+      "category": "Pull",
+      "equipment_groups": [["Preacher Curl Bench"], ["EZ Bar", "Dumbbells"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Biceps"],
+      "how_to": [
+        "Rest the backs of your upper arms on the preacher pad.",
+        "Hold the bar with an underhand grip, arms extended.",
+        "Curl the weight up toward your shoulders.",
+        "Lower it back down slowly to full extension."
+      ],
+      "tags": ["isolation", "biceps"]
+    },
+    {
+      "name": "Concentration Curl",
+      "category": "Pull",
+      "equipment_groups": [["Dumbbells"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Biceps"],
+      "how_to": [
+        "Sit and brace your working elbow against your inner thigh.",
+        "Hold a dumbbell with your arm extended.",
+        "Curl the dumbbell up toward your shoulder.",
+        "Lower it back down with control."
+      ],
+      "tags": ["isolation", "biceps"]
+    },
+    {
+      "name": "Cable Curl",
+      "category": "Pull",
+      "equipment_groups": [["Cable Machine"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Biceps"],
+      "how_to": [
+        "Attach a bar to a low pulley and grip it underhand.",
+        "Keep your elbows tucked at your sides.",
+        "Curl the bar up toward your shoulders.",
+        "Lower it back down under constant tension."
+      ],
+      "tags": ["isolation", "biceps"]
+    },
+    {
+      "name": "Spider Curl",
+      "category": "Pull",
+      "equipment_groups": [["Adjustable Bench"], ["Dumbbells", "EZ Bar"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Biceps"],
+      "how_to": [
+        "Lie chest-down on an inclined bench with your arms hanging down.",
+        "Hold the weight with an underhand grip.",
+        "Curl it up toward your shoulders, keeping your upper arms still.",
+        "Lower it back down slowly."
+      ],
+      "tags": ["isolation", "biceps"]
+    },
+    {
+      "name": "Zottman Curl",
+      "category": "Pull",
+      "equipment_groups": [["Dumbbells"]],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Biceps", "Forearms"],
+      "how_to": [
+        "Hold a dumbbell in each hand, palms facing forward.",
+        "Curl the dumbbells up to your shoulders.",
+        "Rotate your palms to face down at the top.",
+        "Lower the dumbbells slowly, then rotate back at the bottom."
+      ],
+      "tags": ["isolation", "biceps"]
+    },
+    {
+      "name": "Reverse Curl",
+      "category": "Pull",
+      "equipment_groups": [["Barbell", "EZ Bar"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Forearms", "Biceps"],
+      "how_to": [
+        "Hold the bar with an overhand grip in front of your thighs.",
+        "Keep your elbows tucked at your sides.",
+        "Curl the bar up toward your shoulders.",
+        "Lower it back down with control."
+      ],
+      "tags": ["isolation", "forearms"]
+    },
+    {
+      "name": "Cross-Body Hammer Curl",
+      "category": "Pull",
+      "equipment_groups": [["Dumbbells"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Biceps", "Forearms"],
+      "how_to": [
+        "Hold a dumbbell in each hand with a neutral grip.",
+        "Keep your elbow tucked at your side.",
+        "Curl one dumbbell across your body toward the opposite shoulder.",
+        "Lower it and repeat on the other side."
+      ],
+      "tags": ["isolation", "biceps"]
+    },
+    {
+      "name": "Wrist Curls",
+      "category": "Pull",
+      "equipment_groups": [["Dumbbells", "Barbell"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Forearms"],
+      "how_to": [
+        "Rest your forearms on your thighs with your wrists past your knees.",
+        "Hold the weight with an underhand grip, palms up.",
+        "Curl your wrists up, letting the weight roll to your fingertips first.",
+        "Lower it back down with control."
+      ],
+      "tags": ["isolation", "forearms"]
+    },
+    {
+      "name": "Reverse Wrist Curls",
+      "category": "Pull",
+      "equipment_groups": [["Dumbbells", "Barbell"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Forearms"],
+      "how_to": [
+        "Rest your forearms on your thighs with your wrists past your knees.",
+        "Hold the weight with an overhand grip, palms down.",
+        "Extend your wrists up as far as you can.",
+        "Lower them back down slowly."
+      ],
+      "tags": ["isolation", "forearms"]
+    },
+    {
+      "name": "Farmer's Carry",
+      "category": "Pull",
+      "equipment_groups": [["Farmer's Walk Handles", "Dumbbells", "Kettlebells"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Grip", "Forearms", "Trapezius"],
+      "how_to": [
+        "Pick up a heavy weight in each hand and stand tall.",
+        "Brace your core and keep your shoulders back.",
+        "Walk forward with short, controlled steps.",
+        "Set the weights down safely at the end."
+      ],
+      "tags": ["carry", "grip"]
+    },
+    {
+      "name": "Dead Hang",
+      "category": "Pull",
+      "equipment_groups": [["Pull-Up Bar"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Grip", "Forearms", "Lats"],
+      "how_to": [
+        "Grip the bar overhand about shoulder-width apart.",
+        "Hang with your arms fully extended and feet off the floor.",
+        "Keep your shoulders slightly engaged.",
+        "Hold for time, then lower yourself down safely."
+      ],
+      "tags": ["grip", "isometric"]
+    },
+    {
+      "name": "Plate Pinches",
+      "category": "Pull",
+      "equipment_groups": [["Weight Plates"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Grip", "Forearms"],
+      "how_to": [
+        "Stack two plates smooth-side out and pinch them with your fingers.",
+        "Lift the plates off the ground and stand tall.",
+        "Hold them for time using only your fingers and thumb.",
+        "Lower them down safely."
+      ],
+      "tags": ["grip", "isometric"]
+    },
+    {
+      "name": "Hand Gripper",
+      "category": "Pull",
+      "equipment_groups": [["Grip Strengthener"]],
+      "difficulty": "Beginner",
+      "muscles_worked": ["Grip", "Forearms"],
+      "how_to": [
+        "Hold the gripper in one hand with the handle across your palm.",
+        "Squeeze the handles together as far as you can.",
+        "Hold briefly at full closure.",
+        "Release slowly and repeat."
+      ],
+      "tags": ["grip", "forearms"]
+    },
+    {
+      "name": "Wrist Roller",
+      "category": "Pull",
+      "equipment_groups": [],
+      "difficulty": "Intermediate",
+      "muscles_worked": ["Forearms", "Grip"],
+      "how_to": [
+        "Hold the roller out in front of you at shoulder height.",
+        "Keep your arms extended and core braced.",
+        "Roll the weight up by turning the bar hand over hand.",
+        "Reverse the motion to lower it back down."
+      ],
+      "tags": ["isolation", "forearms"]
+    }
+  ]
+}
