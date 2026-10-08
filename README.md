@@ -1,5 +1,7 @@
 # Reps
 
+[![tests](https://github.com/carsongranese3/reps/actions/workflows/tests.yml/badge.svg)](https://github.com/carsongranese3/reps/actions/workflows/tests.yml)
+
 A personal workout tracker. Build a workout, plan it on a calendar, track it set by set at the gym,
 and see your history, streak and personal records afterward. It's an installable PWA built for one
 person: one responsive app that works on a laptop and a phone.
